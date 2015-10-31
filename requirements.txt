@@ -1,0 +1,5 @@
+# PythonOCC
+
+# ** conda installs **
+# scipy
+# matplotlib

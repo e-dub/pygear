@@ -1,0 +1,1 @@
+Writing of files in examples
