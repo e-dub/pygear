@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# coding: utf-8
+
 """
 Classes representing involute gear wheels
 

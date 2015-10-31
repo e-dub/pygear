@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# coding: utf-8
+
 """
 Example problem 1 for pyGear
 
