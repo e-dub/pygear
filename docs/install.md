@@ -3,9 +3,11 @@
 ## Requirements
 
 pygear depends on the following libraries:
-- scipy (which itself depends on numpy)
+- numpy
+- scipy
 - matplotlib
 - PythonOCC >= 0.16
+- a UI backend: wxPython, pyside or pyqt (PythonOCC can use any of the 3, at least 1 must be present)
 
 ## Install procedure
 

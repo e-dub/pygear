@@ -1,20 +1,6 @@
-"""
-Example data for pyGear
+# coding: utf-8
 
-changelog:
-    2011/07/30  version 0.10    jdamerau@arcor.de
-    2011/12/01  version 0.11    jdamerau@arcor.de
-    2012/04/30  version 0.12    jdamerau@arcor.de
-
-license:
-This code is published under the terms of the GNU General Public License v3
-http://www.gnu.org/licenses/gpl-3.0.html
-
-project home:
-https://sourceforge.net/projects/pygear/
-
-The code has been tested with Python 2.6, http://www.python.org
-"""
+"""Example data for pyGear"""
 
 # EXAMPLE GEARS
 # external gears

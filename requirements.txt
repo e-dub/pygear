@@ -1,5 +1,4 @@
-# PythonOCC
-
-# ** conda installs **
-# scipy
-# matplotlib
+PythonOCC
+numpy
+scipy
+matplotlib
