@@ -269,6 +269,7 @@ def display_occ_shape(shape_to_display):
     """
     display, start_display, add_menu, add_function_to_menu = init_display("wx")
     display.DisplayShape(shape_to_display)
+    display.FitAll()
     start_display()
     
 
@@ -782,7 +783,7 @@ class CylindricalGearWheel(GearWheel):
 
         Parameters
         ----------
-        z        : number of teeth (numeric, integer)
+            z        : number of teeth (numeric, integer)
         m_n      : normal module (numeric, positive)
         d        : pitch diameter (numeric)
                    two of the three parameters z, m_n, d, must be supplied
