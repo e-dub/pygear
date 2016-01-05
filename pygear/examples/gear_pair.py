@@ -5,10 +5,11 @@
 
 Summary
 -------
-CREATE GEAR PAIR FROM GEAR DATA
-EXPORT STEP-FILES,
-CALCULATE INERTIA-TENSORS
-DISPLAY ONE OF THE GEARS
+Create gear pair from gear data
+Export STEP files
+Calculate inertia tensors
+Display one of the gears
+
 """
 
 from __future__ import print_function

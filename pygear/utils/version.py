@@ -35,4 +35,3 @@ def get_version(version):
         return "{0}{1}{2}".format(main, VERSION_MAPPING.get(version[3]), version[4])
 
     return main
-

@@ -5,7 +5,7 @@
 
 Summary
 -------
-CREATE GEAR THROUGH MANUFACTURING SIMULATION (HOBBING)
+Create gear through manufacturing simulation (hobbing)
 
 """
 
@@ -25,7 +25,7 @@ myblank = pygear.core.Blank()  # create blank instance
 
 # set blank to be arc segment (half a tooth is sufficient, must begin at pi/2 for external gears) with 100 points.
 # This is necessary in most cases as the tool does usually not cut the tip of the tooth.
-myblank.setCircular(125.0, scipy.pi / 2, scipy.pi / 2 * (1 + 1 / pygear.examples.example_data.hobber.get('z')), 100)
+myblank.set_circular(125.0, scipy.pi / 2, scipy.pi / 2 * (1 + 1 / pygear.examples.example_data.hobber.get('z')), 100)
 
 print(myblank)  # print blank data
 mymachine = pygear.core.GearHobber(machinedata, mytool, myblank)  # create (manufacturing) machine instance
@@ -36,7 +36,7 @@ print(mymachine)  # print machine data
 
 # get limits of curve parameters of tool (that is internally represented
 # by a parametrized and arc-length normalized curve)
-tool_param_limit = mytool._getParameterLimit()
+tool_param_limit = mytool._get_parameter_limit()
 
 tool_points = 201  # set the resolution of the tool profiles in the plot
 tool = scipy.zeros([tool_points, 2])  # allocate array for 2D-points of tool profile
@@ -61,7 +61,7 @@ for angle_index in range(int(-(angle_points - 1) / 2), int((angle_points - 1) / 
 plt.subplot(122, aspect='equal')  # right subplot is active
 
 # simulate gear manufacturing to create tooth shape (blank is accounted for)
-[formcoords, geardata] = mymachine.createToothShape()
+[formcoords, geardata] = mymachine.create_tooth_shape()
 
 # convert tooth form coordinates to NumPy-array (for plotting)
 np_formcoords = pygear.core.pythonocc_array_to_numpy_array(formcoords)

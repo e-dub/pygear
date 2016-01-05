@@ -5,7 +5,7 @@
 
 Summary
 -------
-CREATE GEAR GEOMETRY AND STEP-EXPORT FROM GEAR DATA
+Create gear geometry and a export STEP file
 
 """
 
