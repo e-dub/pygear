@@ -1550,18 +1550,24 @@ class CylindricalGearWheel(GearWheel):
             wire_end = BRepBuilderAPI_MakeWire(edge_end.Edge())
         wire_first = TopoDS_Cast.Wire(solid_gearwheel.FirstShape())
         wire_last = TopoDS_Cast.Wire(solid_gearwheel.LastShape())
-        if self.data.get('z') > 0:
-            face_first = BRepBuilderAPI_MakeFace(plane_start, wire_first)
-            if not self.data.get('d_s') == 0.0:
-                face_first.Add(TopoDS_Cast.Wire(wire_start.Shape().Reversed()))
-            face_last = BRepBuilderAPI_MakeFace(plane_end, TopoDS_Cast.Wire(wire_last.Reversed()))
-            if not self.data.get('d_s') == 0.0:
-                face_last.Add(TopoDS_Cast.Wire(wire_end.Shape().Reversed()))
-        else:
-            face_first = BRepBuilderAPI_MakeFace(plane_start, TopoDS_Cast().Wire(wire_start.Shape().Reversed()))
-            face_first.Add(wire_first)
-            face_last = BRepBuilderAPI_MakeFace(plane_end, TopoDS_Cast().wire(wire_end.Shape().Reversed()))
-            face_last.Add(TopoDS_Cast.Wire(wire_last.Reversed()))
+        face_first = BRepBuilderAPI_MakeFace(plane_start, wire_first)
+        if not self.data.get('d_s') == 0.0:
+            face_first.Add(TopoDS_Cast.Wire(wire_start.Shape().Reversed()))
+        face_last = BRepBuilderAPI_MakeFace(plane_end, TopoDS_Cast.Wire(wire_last.Reversed()))
+        if not self.data.get('d_s') == 0.0:
+            face_last.Add(TopoDS_Cast.Wire(wire_end.Shape().Reversed()))
+#        if self.data.get('z') > 0:
+#            face_first = BRepBuilderAPI_MakeFace(plane_start, wire_first)
+#            if not self.data.get('d_s') == 0.0:
+#                face_first.Add(TopoDS_Cast.Wire(wire_start.Shape().Reversed()))
+#            face_last = BRepBuilderAPI_MakeFace(plane_end, TopoDS_Cast.Wire(wire_last.Reversed()))
+#            if not self.data.get('d_s') == 0.0:
+#                face_last.Add(TopoDS_Cast.Wire(wire_end.Shape().Reversed()))
+#        else:
+#            face_first = BRepBuilderAPI_MakeFace(plane_start, TopoDS_Cast().Wire(wire_start.Shape().Reversed()))
+#            face_first.Add(wire_first)
+#            face_last = BRepBuilderAPI_MakeFace(plane_end, TopoDS_Cast().wire(wire_end.Shape().Reversed()))
+#            face_last.Add(TopoDS_Cast.Wire(wire_last.Reversed()))
 
         # construct shaft cylinder and final solid
         if not self.data.get('d_s') == 0.0:
@@ -3579,7 +3585,7 @@ class Blank:
 # class WormGearPair(GearPair):
 # class GearStage:
 # class CylindricalGearStage(GearStage):
-# class PlanetaryGearStage(GearStage):
+# class GearStage(GearStage):
 # class BevelGearStage(GearStage):
 # class WormGearStage(GearStage):
 # class GearBox:
