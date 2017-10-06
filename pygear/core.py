@@ -12,6 +12,7 @@ changelog:
     2012/03/24  version 0.22    jdamerau@arcor.de
     2012/04/30  version 0.23    jochen.damerau@gmail.com
     2015/11/18  version 0.24    jochen.damerau@gmail.com
+    in progress version 0.25    Erich.Wehrle@unibz.it
 
 license:
 This code is published under the terms of the GNU General Public License v3
@@ -20,7 +21,7 @@ http://www.gnu.org/licenses/gpl-3.0.html
 project home:
 https://sourceforge.net/projects/pygear/
 
-The code has been tested with Python 2.7, http://www.python.org
+The code has been tested with Python 3.6, http://www.python.org
 required modules (tested with version):
 1. pythonOCC (0.16), http://www.pythonocc.org
 2. wxPython (3.0.2), http://www.wxpython.org
@@ -32,21 +33,27 @@ required modules (tested with version):
 from __future__ import division
 from math import sin, asin, cos, acos, tan, atan, pi, degrees, radians, sqrt
 from copy import *
-from sys import maxint
+#from sys import maxint
 from warnings import *
 from OCC.TColgp import TColgp_Array1OfPnt2d, TColgp_Array1OfPnt
 from OCC.TColStd import TColStd_Array1OfReal, TColStd_Array1OfInteger
-from OCC.Geom2d import Geom2d_Circle, Geom2d_Line, Geom2d_CartesianPoint, Geom2d_OffsetCurve, \
-                       Geom2d_BSplineCurve, Geom2d_Curve, Handle_Geom2d_BSplineCurve
-from OCC.Geom import Geom_Plane, Geom_Circle, Geom_Line, Geom_BSplineCurve, Geom_OffsetCurve
-from OCC.Geom2dAPI import Geom2dAPI_PointsToBSpline, Geom2dAPI_InterCurveCurve, Geom2dAPI_ProjectPointOnCurve
+from OCC.Geom2d import(Geom2d_Circle, Geom2d_Line, Geom2d_CartesianPoint,
+                       Geom2d_OffsetCurve, Geom2d_BSplineCurve, Geom2d_Curve,
+                       Handle_Geom2d_BSplineCurve)
+from OCC.Geom import(Geom_Plane, Geom_Circle, Geom_Line, Geom_BSplineCurve,
+                     Geom_OffsetCurve)
+from OCC.Geom2dAPI import(Geom2dAPI_PointsToBSpline, Geom2dAPI_InterCurveCurve,
+                          Geom2dAPI_ProjectPointOnCurve)
 from OCC.GeomAPI import GeomAPI_PointsToBSpline, GeomAPI_ProjectPointOnCurve
-from OCC.gp import gp_Pnt, gp_Pnt2d, gp_Dir, gp_Dir2d, gp_Ax2, gp_Ax22d, gp_Circ,   \
-                   gp_Pln, gp_Vec, gp_Vec2d, gp_Ax1, gp_Trsf, gp_XYZ
-from OCC.BRepBuilderAPI import BRepBuilderAPI_MakeVertex, BRepBuilderAPI_MakeEdge,  \
-                               BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakePolygon,  \
-                               BRepBuilderAPI_MakeFace, BRepBuilderAPI_Sewing,        \
-                               BRepBuilderAPI_MakeSolid, BRepBuilderAPI_Transform
+from OCC.gp import(gp_Pnt, gp_Pnt2d, gp_Dir, gp_Dir2d, gp_Ax2, gp_Ax22d,
+                   gp_Circ, gp_Pln, gp_Vec, gp_Vec2d, gp_Ax1, gp_Trsf, gp_XYZ)
+from OCC.BRepBuilderAPI import(BRepBuilderAPI_MakeVertex,
+                               BRepBuilderAPI_MakeEdge,
+                               BRepBuilderAPI_MakeWire,
+                               BRepBuilderAPI_MakePolygon,
+                               BRepBuilderAPI_MakeFace, BRepBuilderAPI_Sewing,
+                               BRepBuilderAPI_MakeSolid,
+                               BRepBuilderAPI_Transform)
 from OCC.BRepPrimAPI import BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakePrism
 from OCC.BRepOffsetAPI import BRepOffsetAPI_MakePipeShell
 from OCC.TopoDS import TopoDS_Wire
@@ -71,9 +78,10 @@ from scipy.optimize import newton, fsolve, fmin_cg
 from scipy.linalg import norm
 from scipy.interpolate import InterpolatedUnivariateSpline
 
-__version__ = "0.24"
-__all__ = ['GearWheel','CylindricalGearWheel','GearPair','CylindricalGearPair','writeCoords',  \
-           'displayOCCShape','writeOCCShape','Tool','ToothedRackTool','Machine','GearHobber',  \
+__version__ = "0.25"
+__all__ = ['GearWheel', 'CylindricalGearWheel', 'GearPair',
+           'CylindricalGearPair', 'writeCoords', 'displayOCCShape',
+           'writeOCCShape', 'Tool', 'ToothedRackTool', 'Machine', 'GearHobber',
            'Blank']
 
 
@@ -88,7 +96,7 @@ def inv(angle):
     OUTPUT:
     value of involute-function at angle (numeric)
     """
-    
+
     return tan(radians(angle))-radians(angle)
 
 
@@ -103,93 +111,106 @@ def sign(number):
     value of sign(number) (-1, 0, 1)
     """
 
-    if number>0.0:
-         return 1
-    elif number<0.0:
-         return -1
+    if number > 0.0:
+        return 1
+    elif number < 0.0:
+        return -1
     else:
-         return 0
+        return 0
 
 
 def NumPyArrayToPythonOCCArray(numpy_array):
     """
-    transform array from nparray (NumPy) to TColgp_Array1OfPnt2d (pythonOCC) format
+    transform array from nparray (NumPy) to TColgp_Array1OfPnt2d (pythonOCC)
+    format
 
     INPUT parameter:
-    numpy_array : array containing points in rows and coordinates in columns (Nx2-nparray, NumPy)
+    numpy_array : array containing points in rows and coordinates in columns
+    (Nx2-nparray, NumPy)
 
     OUTPUT:
-    pythonOCC_array: array containing points in rows and coordinates in columns (TColgp_Array1OfPnt2d, pythonOCC)
+    pythonOCC_array: array containing points in rows and coordinates in columns
+    (TColgp_Array1OfPnt2d, pythonOCC)
     """
-    
+
     # create arrays of points holding coordinates
     pythonOCC_array = TColgp_Array1OfPnt2d(1, size(numpy_array, 0))
     # set entries
     for index in range(0, size(numpy_array, 0)):
-         pythonOCC_array.SetValue(index+1, gp_Pnt2d(numpy_array[index,0], numpy_array[index,1]))
+        pythonOCC_array.SetValue(index+1, gp_Pnt2d(numpy_array[index, 0],
+                                                   numpy_array[index, 1]))
 
     return pythonOCC_array
 
 
 def PythonOCCArrayToNumPyArray(pythonOCC_array):
     """
-    transform array from TColgp_Array1OfPnt2d (pythonOCC) to nparray (NumPy) format
+    transform array from TColgp_Array1OfPnt2d (pythonOCC) to nparray (NumPy)
+    format
 
     INPUT parameter:
-    pythonOCC_array: array containing points in rows and coordinates in columns (TColgp_Array1OfPnt2d, pythonOCC)
+    pythonOCC_array: array containing points in rows and coordinates in columns
+    (TColgp_Array1OfPnt2d, pythonOCC)
 
     OUTPUT:
-    numpy_array : array containing points in rows and coordinates in columns (Nx2-nparray, NumPy)
+    numpy_array : array containing points in rows and coordinates in columns
+    (Nx2-nparray, NumPy)
     """
-    
+
     # create arrays of points holding coordinates
     numpy_array = zeros([pythonOCC_array.Length(), 2])
     # set entries
     for index in range(1, pythonOCC_array.Length()+1):
-         numpy_array[index-1,:] = array([pythonOCC_array.Value(index).X(), pythonOCC_array.Value(index).Y()])
+        numpy_array[index-1, :] = array([pythonOCC_array.Value(index).X(),
+                                          pythonOCC_array.Value(index).Y()])
 
     return numpy_array
 
 
 def CartesianCoordinatesToPolarCoordinates(x, y):
     """
-    convert a tuple that represents a vector in cartesian coordinates to polar coordinates.
-    The zero angle of the polar representation corresponds to x-direction of cartesian representation.
+    convert a tuple that represents a vector in cartesian coordinates to polar
+    coordinates.
+    The zero angle of the polar representation corresponds to x-direction of
+    cartesian representation.
 
     INPUT parameters:
     x: x-value of vector in cartesian coordinates (numeric)
     y: y-value of vector in cartesian coordinates (numeric)
-    
+
     OUTPUT:
     r:      radial coordinate of vector in polar coordinates (numeric)
-    phi:    anglular coordinate of vector in polar coordinates (numeric)[radians] 
+    phi:    anglular coordinate of vector in polar coordinates (numeric)
+            [radians]
     """
 
     r = sqrt(x**2+y**2)
-    if x>0.0:   # arctangent is not unique
-         phi = atan(y/x)
-    elif x<0.0:
-         phi = atan(y/x)+pi*sign(y)
+    if x > 0.0:   # arctangent is not unique
+        phi = atan(y/x)
+    elif x < 0.0:
+        phi = atan(y/x)+pi*sign(y)
     else:   # absolute value of x/y is infinity
-         if y>0.0:
-              phi = pi/2
-         elif y<0.0:
-              phi = -pi/2
-         else:
-              phi = 0.0     # this is arbitrary
-
+        if y > 0.0:
+            phi = pi/2
+        elif y < 0.0:
+            phi = -pi/2
+        else:
+            phi = 0.0     # this is arbitrary
     return r, phi
 
 
 def PolarCoordinatesToCartesianCoordinates(r, phi):
     """
-    convert a tuple that represents a vector in polar coordinates to cartesian coordinates.
-    The zero angle of the polar representation corresponds to x-direction of cartesian representation.
+    convert a tuple that represents a vector in polar coordinates to cartesian
+    coordinates.
+    The zero angle of the polar representation corresponds to x-direction of
+    cartesian representation.
 
     INPUT parameters:
     r:      radial coordinate of vector in polar coordinates (numeric)
-    phi:    anglular coordinate of vector in polar coordinates (numeric)[radians] 
-    
+    phi:    anglular coordinate of vector in polar coordinates (numeric)
+            [radians]
+
     OUTPUT:
     x: x-value of vector in cartesian coordinates (numeric)
     y: y-value of vector in cartesian coordinates (numeric)
@@ -199,14 +220,15 @@ def PolarCoordinatesToCartesianCoordinates(r, phi):
     y = r*sin(phi)
 
     return x, y
-    
+
 
 def writeCoords(coords, outfile):
     """
     Output python list formatted as array (rows and columns)
 
     INPUT parameter:
-    coords  : array containing points in rows and coordinates in columns (TColgp_Array1OfPnt2d, pythonOCC)
+    coords  : array containing points in rows and coordinates in columns
+              (TColgp_Array1OfPnt2d, pythonOCC)
     outfile : filename to output array (string)
     """
 
@@ -215,8 +237,8 @@ def writeCoords(coords, outfile):
     upper_index = coords.Upper()
     lower_index = coords.Lower()
     for index in range(lower_index, upper_index+1):
-         fd.write(str(coords.Value(index).X()).ljust(20)+'\t'+  \
-                  str(coords.Value(index).Y()).ljust(20)+'\n')
+        fd.write(str(coords.Value(index).X()).ljust(20) + '\t' +
+                 str(coords.Value(index).Y()).ljust(20) + '\n')
     fd.close()
 
 
@@ -230,10 +252,10 @@ def displayOCCShape(shape):
 
     from OCC.Display.SimpleGui import init_display
     display, start_display, add_menu, add_function_to_menu = init_display()
-    
+
     display.DisplayShape(shape, update=True)
     start_display()
-    
+
 
 def writeOCCShape(shape, outfile, outformat='step'):
     """
@@ -243,38 +265,38 @@ def writeOCCShape(shape, outfile, outformat='step'):
     shape     : to be saved to file (OpenCascade-Shape-object)
     outfile   : full path and filename (string)
     outformat : output format (string)
-                optional - one of the following: 'iges', 'step', 'stl' or 'vrml'
+                optional-one of the following: 'iges', 'step', 'stl' or 'vrml'
     """
-    
+
     from OCC.STEPControl import STEPControl_Writer, STEPControl_AsIs
     from OCC.IGESControl import IGESControl_Writer
     from OCC.StlAPI import StlAPI_Writer
     #from OCC.VrmlAPI import VrmlAPI_Writer
 
-    if outformat=='step':
+    if outformat == 'step':
         export = STEPControl_Writer()
-        export.Transfer(shape,STEPControl_AsIs)
+        export.Transfer(shape, STEPControl_AsIs)
         export.Write(outfile)
-        
-    elif outformat=='iges':  # still buggy
-        export = IGESControl_Writer('mm',1)
+
+    elif outformat == 'iges':  # still buggy
+        export = IGESControl_Writer('mm', 1)
         export.AddShape(shape)
         export.Write(outfile)
-        
-    elif outformat=='stl':  # This works fine now
+
+    elif outformat == 'stl':  # This works fine now
         stl_ascii_format = True
         export = StlAPI_Writer()
         export.Write(shape, outfile, stl_ascii_format)
         #export.write_file()
 
-    elif outformat=='vrml':  # No implementation
+    elif outformat == 'vrml':  # No implementation
         pass
         #export = VrmlAPI_Writer()
         #export.Write(shape, outfile)
-        
+
     else:
-        raise ValueError, 'output format not known (allowed values: \'iges\', \'step\', \'stl\' or \'vrml\')'  
-    
+        raise(ValueError, 'output format not known (allowed values: \'iges\', \'step\', \'stl\' or \'vrml\')')
+
 
 # Classes
 class GearWheel:
@@ -283,34 +305,32 @@ class GearWheel:
     """
 
     # Attributes: settings for geometry construction
-    points_flank   = 20  # points along the involute from root form to tip form circle
-    points_fillet  = 15  # points on fillet from root to root form circle
-    points_tip     = 5   # points along tip circle (half tooth)
-    points_root    = 5   # points along root circle from center of gap to
-                         # beginning of fillet (half tooth)
-    points_shaft   = 20  # points on inner radius of gearwheel (shaft diameter)
-    points_chamfer = 4   # points on tip chamfer
-    points_ext     = 8   # points on extension of involute beyond base circle (if applicable)(should be at least 8)
-    points_width   = 10  # resolution along width
+    points_flank = 20       # points along the involute from root form to tip form circle
+    points_fillet = 15      # points on fillet from root to root form circle
+    points_tip = 5          # points along tip circle (half tooth)
+    points_root = 5         # points along root circle from center of gap to beginning of fillet (half tooth)
+    points_shaft = 20       # points on inner radius of gearwheel (shaft diameter)
+    points_chamfer = 4      # points on tip chamfer
+    points_ext = 8          # points on extension of involute beyond base circle (if applicable)(should be at least 8)
+    points_width = 10       # resolution along width
 
     # Attributes: default settings for parameters
-    _x_default       =  0.0    # default value for addendum modification
-    _alpha_n_default = 20.0    # default value for pressure angle (DIN 867)
-    _beta_default    =  0.0    # default value for helix angle (spur gear)
-    _rho_f_default   =  0.38   # default value for fillet radius (divided bei module)(DIN 867)
-    _c_default       =  0.25   # default value for tip clearance (divided bei module)(DIN 867)
-    _k_default       =  0.0    # default value for tip height modification
-    _d_s_default     =  0.0    # default value for shaft diameter (inner gear wheel diameter)
-    _h_k_default     =  0.0    # default value for radial value of tip chamfer
-    _tol_default     =  1e-6   # default tolerance for comparisons
-    _A_s_default     =  0.0    # default value for tooth thickness allowance (DIN 3967)
+    _x_default =  0.0       # default value for addendum modification
+    _alpha_n_default = 20.0 # default value for pressure angle (DIN 867)
+    _beta_default = 0.0     # default value for helix angle (spur gear)
+    _rho_f_default = 0.38   # default value for fillet radius (divided bei module)(DIN 867)
+    _c_default = 0.25       # default value for tip clearance (divided bei module)(DIN 867)
+    _k_default = 0.0        # default value for tip height modification
+    _d_s_default = 0.0      # default value for shaft diameter (inner gear wheel diameter)
+    _h_k_default = 0.0      # default value for radial value of tip chamfer
+    _tol_default = 1e-6     # default tolerance for comparisons
+    _A_s_default = 0.0      # default value for tooth thickness allowance (DIN 3967)
 
     # Attributes: gear data
-    data          = None   # dictionary containing all gear parameters for macro-geometry
-    modifications = None   # dictionary containing all gear parameters for micro-geometry (flank profile modifications)
-    formcoords    = None   # list of 2D-coordinates of points of half a tooth profile (TColgp_Array1OfPnt2d, pythonOCC)
-    _formwire     = None   # wire of half a tooth profile (TopoDS_Wire, pythonOCC)
-
+    data = None             # dictionary containing all gear parameters for macro-geometry
+    modifications = None    # dictionary containing all gear parameters for micro-geometry (flank profile modifications)
+    formcoords = None       # list of 2D-coordinates of points of half a tooth profile (TColgp_Array1OfPnt2d, pythonOCC)
+    _formwire = None        # wire of half a tooth profile (TopoDS_Wire, pythonOCC)
 
     def setResolution(self, curvename, value):
         """
@@ -318,23 +338,23 @@ class GearWheel:
 
         INPUT parameters:
         curvename : segment of tooth flank (string)
-                    one of the following: flank, fillet, tip, root, shaft, width
+                    one of the following: flank, fillet, tip, root, shaft,
+                    width
         value     : new value for number of points to represent segment
         """
-        
-        if curvename=='flank':
-             self.points_flank = value
-        elif curvename=='fillet':
-             self.points_fillet = value
-        elif curvename=='tip':
-             self.points_tip = value
-        elif curvename=='root':
-             self.points_root = value
-        elif curvename=='shaft':
-             self.points_shaft = value
-        elif curvename=='width':
-             self.points_width = value
 
+        if curvename == 'flank':
+            self.points_flank = value
+        elif curvename == 'fillet':
+            self.points_fillet = value
+        elif curvename == 'tip':
+            self.points_tip = value
+        elif curvename == 'root':
+            self.points_root = value
+        elif curvename == 'shaft':
+            self.points_shaft = value
+        elif curvename == 'width':
+            self.points_width = value
 
     def getResolution(self, curvename):
         """
@@ -342,25 +362,25 @@ class GearWheel:
 
         INPUT parameters:
         curvename : segment of tooth flank (string)
-                    one of the following: flank, fillet, tip, root, shaft, width
+                    one of the following: flank, fillet, tip, root, shaft,
+                    width
 
         OUTPUT:
         number of points used to represent requested segment
         """
-        
-        if curvename=='flank':
-             return self.points_flank
-        elif curvename=='fillet':
-             return self.points_fillet
-        elif curvename=='tip':
-             return self.points_tip
-        elif curvename=='root':
-             return self.points_root
-        elif curvename=='shaft':
-             return self.points_shaft
-        elif curvename=='width':
-             return self.points_width
 
+        if curvename == 'flank':
+            self.points_flank = value
+        elif curvename == 'fillet':
+            self.points_fillet = value
+        elif curvename == 'tip':
+            self.points_tip = value
+        elif curvename == 'root':
+            self.points_root = value
+        elif curvename == 'shaft':
+            self.points_shaft = value
+        elif curvename == 'width':
+            self.points_width = value
 
     def setFormCoords(self, formcoords, formwire):
         """
@@ -370,20 +390,17 @@ class GearWheel:
         coords : list of 2d-coordinate points (TColgp_Array1OfPnt2d, pythonOCC)
         wire   : wire describing the tooth form (TopoDS_Wire, pythonOCC)
         """
-        
+
         # form coordinates: type and value check (at least two points for defining a
         # tooth form (straight flanks) and two coordinates per point)
         if not isinstance(formcoords, TColgp_Array1OfPnt2d):
-             raise TypeError, 'instance of TColgp_Array1OfPnt2d expected'
-        if formcoords.Length()<2:
-             raise TypeError, 'too few points for tooth form'
-
+            raise(TypeError, 'instance of TColgp_Array1OfPnt2d expected')
+        if formcoords.Length() < 2:
+            raise(TypeError, 'too few points for tooth form')
         if formwire and not isinstance(formwire, TopoDS_Wire):
-             raise TypeError, 'instance of TopoDS_Wire expected'
-
+            raise(TypeError, 'instance of TopoDS_Wire expected')
         self.formcoords = formcoords
-        self._formwire  = formwire
-
+        self._formwire = formwire
 
     def getFormCoords(self):
         """
@@ -396,9 +413,7 @@ class GearWheel:
         tooth form coordinates (TColgp_Array1OfPnt2d, pythonOCC)
         tooth form (TopoDS_Wire, pythonOCC)
         """
-
         return self.formcoords, self._formwire
-             
 
     def _makeUnique(self, coords):
         """
@@ -410,34 +425,36 @@ class GearWheel:
         OUTPUT:
         unique_coords : list of unique coordinates (TColgp_Array1OfPnt2d, pythonOCC)
         """
-        
+
         # tolerance for comparisons
         tol = self._tol_default*self.data.get('m_n')
 
         # upper and lower index of point-array
         upper_index = coords.Upper()
         lower_index = coords.Lower()
-    
+
         # remove redundant entries
         uniques = list()
         for index in range(lower_index, upper_index+1):
-             unique = True
-             for unique_point in uniques:
-                  if abs(coords.Value(index).X()-unique_point[0])<tol and  \
-                     abs(coords.Value(index).Y()-unique_point[1])<tol:
-                       unique = False
-             if unique:
-                  uniques.append([coords.Value(index).X(), coords.Value(index).Y()])
+            unique = True
+            for unique_point in uniques:
+                if abs(coords.Value(index).X()-unique_point[0]) < tol and \
+                   abs(coords.Value(index).Y()-unique_point[1]) < tol:
+                    unique = False
+            if unique:
+                uniques.append([coords.Value(index).X(),
+                                coords.Value(index).Y()])
 
         # copy list entries into coordinate array
         length_uniques = len(uniques)
-        unique_coords  = TColgp_Array1OfPnt2d(lower_index, lower_index+length_uniques-1)
+        unique_coords  = TColgp_Array1OfPnt2d(lower_index,
+                                              lower_index+length_uniques-1)
         for index in range(lower_index, lower_index+length_uniques):
-             if abs(uniques[index-1][0])>tol:
+             if abs(uniques[index-1][0]) > tol:
                   unique_x = uniques[index-1][0]
              else:
                   unique_x = 0.0
-             if abs(uniques[index-1][1])>tol:
+             if abs(uniques[index-1][1]) > tol:
                   unique_y = uniques[index-1][1]
              else:
                   unique_y = 0.0
@@ -464,13 +481,13 @@ class GearWheel:
         """
 
         if not (type(z_coord_of_plane)==type(0.0) or type(z_coord_of_plane)==type(0)):
-            raise TypeError, 'z-coordinate must be numeric'
+            raise(TypeError, 'z-coordinate must be numeric')
 
         # convert point
         if isinstance(geom2d_object, gp_Pnt2d):
             geom3d_object = gp_Pnt(geom2d_object.X(), geom2d_object.Y(), z_coord_of_plane)
 
-        # convert line    
+        # convert line
         elif isinstance(geom2d_object, Geom2d_Line):
             location2d    = geom2d_object.Location()
             location3d    = gp_Pnt(location2d.X(), location2d.Y(), z_coord_of_plane)
@@ -478,7 +495,7 @@ class GearWheel:
             direction3d   = gp_Dir(direction2d.X(), direction2d.Y(), z_coord_of_plane)
             geom3d_object = Geom_Line(location3d, direction3d)
 
-        # convert circle    
+        # convert circle
         elif isinstance(geom2d_object, Geom2d_Circle):
             circle2d      = geom2d_object.Circ2d()
             location2d    = circle2d.Location()
@@ -491,7 +508,7 @@ class GearWheel:
             radius        = circle2d.Radius()
             geom3d_object = Geom_Circle(axis3d, radius)
 
-        # convert bspline          
+        # convert bspline
         elif isinstance(geom2d_object, Geom2d_BSplineCurve):
             pole_number = geom2d_object.NbPoles()
             poles3d     = TColgp_Array1OfPnt(1, pole_number)
@@ -507,7 +524,7 @@ class GearWheel:
             periodic       = geom2d_object.IsPeriodic()
             geom3d_object  = Geom_BSplineCurve(poles3d, knots, multiplicities, degree, periodic)
 
-        # convert offset curve          
+        # convert offset curve
         elif isinstance(geom2d_object, Geom2d_OffsetCurve):
             basis_curve2d   = geom2d_object.BasisCurve()
             basis_bspline2d = Handle_Geom2d_BSplineCurve().DownCast(basis_curve2d).GetObject()
@@ -515,10 +532,10 @@ class GearWheel:
             offset          = geom2d_object.Offset()
             reference_dir   = gp_Dir(0.0, 0.0, 1.0)
             geom3d_object   = Geom_OffsetCurve(basis_bspline3d, offset, reference_dir)
-            
-            
+
+
         else:
-            raise TypeError, 'method cannot be applied to given object type'
+            raise(TypeError, 'method cannot be applied to given object type')
 
         return geom3d_object
 
@@ -533,7 +550,7 @@ class GearWheel:
         OUTPUT:
         string representation of class
         """
-        
+
         outstr = 'gear wheel data:\n'
         # output gear data
         for date in self.data:
@@ -556,7 +573,7 @@ class GearWheel:
                             str(self.formcoords.Value(index).Y()).ljust(20)+'\n'
 
         return outstr
-    
+
 
     def __init__(self, geardata, flankmods=None, formcoords=None):
         """
@@ -568,12 +585,12 @@ class GearWheel:
         flankmods  : data of flank modifications (dictionary)
         formcoords : list of 2d-coordinate points (list, list(len=2), numeric)
         """
-        
+
         self.data           = deepcopy(geardata)
         self.modifications  = deepcopy(flankmods)
         self.formcoords     = self.setFormCoords(formcoords, None)
 
-    
+
     def getGearData(self):
         """
         Return data-attribute of class
@@ -581,7 +598,7 @@ class GearWheel:
         OUTPUT:
         data attribute of class (dictionary)
         """
-        
+
         return self.data
 
 
@@ -593,7 +610,7 @@ class GearWheel:
         geardata : dictionary, containing geometric data of gear
                    for content, see method __init__
         """
-        
+
         self.__init__(geardata, self.modifications, self.formcoords)
 
 
@@ -605,7 +622,7 @@ class GearWheel:
         geardata : dictionary, containing geometric data of gear
                    for content, see method __init__
         """
-        
+
         tempdata = self.data.copy()
         tempdata.update(geardata)
         self.__init__(geardata, self.modifications, self.formcoords)
@@ -617,7 +634,7 @@ class GearWheel:
         OUTPUT:
         data attribute of class (dictionary)
         """
-        
+
         return self.modifications
 
 
@@ -629,7 +646,7 @@ class GearWheel:
         flankmods : dictionary, containing flank modification data of gear
                     for content, see method __init__
         """
-        
+
         self.__init__(self.data, flankmods, self.formcoords)
 
 
@@ -641,18 +658,18 @@ class GearWheel:
         flankmods : dictionary, containing flank modification data of gear
                     for content, see method __init__
         """
-        
+
         tempmods = self.modifications.copy()
         tempmods.update(flankmods)
         self.__init__(self.data, tempmods, self.formcoords)
-    
+
 
 class CylindricalGearWheel(GearWheel):
     """
     Class representing a spur wheel or a helical gear wheel. Applicable for external and internal gears.
     Derived from GearWheel-class
     """
-    
+
     def _toothThickness(self, d_y):
         """
         Tooth thickness in transverse cross-section (chord-length)
@@ -673,12 +690,12 @@ class CylindricalGearWheel(GearWheel):
              alpha_yt = degrees(acos(self.data.get('d')/d_y*  \
                         cos(radians(self.data.get('alpha_t')))))
         s_yt = d_y*((pi+4*self.data.get('x_E')*tan(radians(self.data.get('alpha_n'))))/  \
-               2/self.data.get('z')+inv(self.data.get('alpha_t'))-inv(alpha_yt))	
+               2/self.data.get('z')+inv(self.data.get('alpha_t'))-inv(alpha_yt))
         s_y  = d_y*(sin(s_yt/d_y))   # tooth thickness (chord-length)
         d_yc = d_y*(cos(s_yt/d_y))   # diameter at center of tooth (cut with chord)
 
         return s_y, d_yc
-    
+
 
     def _circle(self, x_C, y_C, r, phi):
         """
@@ -690,7 +707,7 @@ class CylindricalGearWheel(GearWheel):
         r   : radius (numeric, positive)
         phi : angle parameter of circle point (numeric)[radians]
               zero value refers to radius parallel to x-axes pointing in positive x-direction
-        
+
         OUTPUT:
         x   : x-value of circle point (numeric)
         y   : y-value of circle point (numeric)
@@ -727,7 +744,7 @@ class CylindricalGearWheel(GearWheel):
         half_tooth = PythonOCCArrayToNumPyArray(self.formcoords)
 
         # convert to polar coordinates
-        half_tooth_polar = zeros([size(half_tooth, 0)-1, 2])  
+        half_tooth_polar = zeros([size(half_tooth, 0)-1, 2])
         for index in range(0, size(half_tooth, 0)-1):
              [r, phi] = CartesianCoordinatesToPolarCoordinates(half_tooth[index+1, 0], half_tooth[index+1, 1])
              half_tooth_polar[index, 0] = r
@@ -757,7 +774,7 @@ class CylindricalGearWheel(GearWheel):
              if second_limit_diameter==None:
                   second_limit_diameter = 2*half_tooth_polar[point, 0]
              if first_limit_diameter==second_limit_diameter:
-                  raise ValueError, 'tooth form coordinate analysis failed'
+                  raise(ValueError, 'tooth form coordinate analysis failed')
              if first_limit_diameter>second_limit_diameter:
                   d_Fa = first_limit_diameter
                   d_Ff = second_limit_diameter
@@ -772,7 +789,7 @@ class CylindricalGearWheel(GearWheel):
 
         else:
              return {'d_f':d_f, 'd_a':d_a, 'z':z}
-        
+
 
     def __init__(self, geardata, flankmods=None, formcoords=None):
         """
@@ -818,11 +835,11 @@ class CylindricalGearWheel(GearWheel):
         d_s      : shaft diameter, inner gear wheel diameter (numeric)
                    optional - set equal 0.0 if not supplied
         A_s      : tooth thickness allowance in normal cross-section (numeric, negative)
-                   optional - set equal 0.0 if not supplied 
+                   optional - set equal 0.0 if not supplied
 
         All input parameters above are arranged in a dictionary. The keys are
         the names of the parameters as listed above.
-                 
+
         formcoords : 2D cartesian coordinates of points on the
                      toothflank, describing a half tooth (TColgp_Array1OfPnt2d, pythonOCC)
 
@@ -843,20 +860,20 @@ class CylindricalGearWheel(GearWheel):
         self.modifications = deepcopy(flankmods)
 
         # form coordinates: value check (at least two points for defining a
-        # tooth form (straight flanks) and two coordinates per point)      
+        # tooth form (straight flanks) and two coordinates per point)
         if formcoords:
              self.setFormCoords(formcoords, None)
              self.data.update(self._analyzeFormcoords())
 
         # number of teeth: value check
         if self.data.has_key('z') and not type(self.data.get('z'))==type(1):
-             raise TypeError, 'number of teeth not integer'
+             raise(TypeError, 'number of teeth not integer')
 
         # module: value check
-        if self.data.has_key('m_n') and not self.data.get('m_n')>=0:   
-             raise ValueError, 'module non-positive'
+        if self.data.has_key('m_n') and not self.data.get('m_n')>=0:
+             raise(ValueError, 'module non-positive')
 
-        # helix angle: set to default if not supplied   
+        # helix angle: set to default if not supplied
         if not self.data.has_key('beta'):
              self.data.update({'beta':self._beta_default})
 
@@ -876,7 +893,7 @@ class CylindricalGearWheel(GearWheel):
                                cos(radians(self.data.get('beta')))/  \
                                self.data.get('m_n'))})
         else:
-             raise AttributeError, 'insufficient data supplied'
+             raise(AttributeError, 'insufficient data supplied')
 
         # calculate transverse pitch angle
         if not self.data.has_key('tau'):
@@ -886,26 +903,26 @@ class CylindricalGearWheel(GearWheel):
         isexternal = sign(self.data.get('z'))
         # pitch diameter: value check (same sign as number of teeth)
         if not sign(self.data.get('d'))==isexternal:
-             raise ValueError, 'sign of pitch diameter'
+             raise(ValueError, 'sign of pitch diameter')
 
-        # calculate module in transverse cross-section                
+        # calculate module in transverse cross-section
         self.data.update({'m_t':self.data.get('m_n')/cos(radians(  \
                           self.data.get('beta')))})
 
-        # tooth width: check for existence and value check        
+        # tooth width: check for existence and value check
         if not self.data.has_key('b'):
-             raise AttributeError, 'tooth width not supplied'
+             raise(AttributeError, 'tooth width not supplied')
         if not self.data.get('b')>=0:
-             raise ValueError, 'tooth width non-positive'
+             raise(ValueError, 'tooth width non-positive')
 
         # pressure angle: value check, set to default if not supplied
         if self.data.has_key('alpha_n'):
              if self.data.get('alpha_n')<0:
-                  raise ValueError, 'pitch angle non-positive'
+                  raise(ValueError, 'pitch angle non-positive')
         else:
              self.data.update({'alpha_n':self._alpha_n_default})
 
-        # addendum modification factor: set to default if not supplied     
+        # addendum modification factor: set to default if not supplied
         if not self.data.has_key('x'):
              self.data.update({'x':self._x_default})
 
@@ -915,8 +932,8 @@ class CylindricalGearWheel(GearWheel):
         # tooth thickness allowance: value check
         else:
              if not self.data.get('A_s')<=0:
-                  raise ValueError, 'tooth thickness allowance positive'
-        # calculate generating addendum modification coefficient:    
+                  raise(ValueError, 'tooth thickness allowance positive')
+        # calculate generating addendum modification coefficient:
         self.data.update({'x_E':self.data.get('x')+self.data.get('A_s')/  \
                           2/tan(radians(self.data.get('alpha_n')))/self.data.get('m_n')})
 
@@ -928,11 +945,11 @@ class CylindricalGearWheel(GearWheel):
         # calculate service pressure angle from service pitch diameter if not supplied
         if self.data.has_key('d_w') and not self.data.has_key('alpha_wt'):
              if not sign(self.data.get('d_w'))==isexternal:
-                  raise ValueError, 'sign of service pitch diameter'
+                  raise(ValueError, 'sign of service pitch diameter')
              self.data.update({'alpha_wt':degrees(acos(self.data.get('d')/  \
                                self.data.get('d_w')*cos(radians(  \
                                self.data.get('alpha_t')))))})
-             
+
         # service pitch diameter: calculate from service pressure angle if possible
         if self.data.has_key('alpha_wt') and not self.data.has_key('d_w'):
              self.data.update({'d_w':self.data.get('d')*  \
@@ -943,33 +960,33 @@ class CylindricalGearWheel(GearWheel):
         self.data.update({'d_b':self.data.get('d')*cos(radians(self.data.get(  \
                           'alpha_t')))})
 
-        # get further data from form coordinate analysis     
+        # get further data from form coordinate analysis
         if formcoords:
              self.data.update(self._analyzeFormcoords())
-                
+
         if not formcoords:
              # tip clearance: value check, set to default if not supplied
              if self.data.has_key('c'):
                   if self.data.get('c')<0.1*self.data.get('m_n') or  \
                      self.data.get('c')>0.3*self.data.get('m_n'):
-                       raise ValueError, 'tip clearance out of bounds'
+                       raise(ValueError, 'tip clearance out of bounds')
              else:
                   self.data.update({'c':self._c_default*self.data.get('m_n')})
 
-             # fillet radius: value check, set to default if not supplied                       
+             # fillet radius: value check, set to default if not supplied
              if not self.data.has_key('rho_f'):
                   self.data.update({'rho_f':self._rho_f_default*self.data.get('m_n')})
              else:
                   if self.data.get('rho_f')<0:
-                       raise ValueError, 'fillet radius negative'
+                       raise(ValueError, 'fillet radius negative')
 
              # CAUTION: THE FOLLOWING SECTION OF CODE WILL BE REMOVED IN FUTURE RELEASES!
-             # tool fillet radius: value check                       
+             # tool fillet radius: value check
              if self.data.has_key('rho_fP'):
                   if self.data.get('rho_fP')<0:
-                       raise ValueError, 'tool fillet radius negative'
+                       raise(ValueError, 'tool fillet radius negative')
                   if not self.data.get('beta')==0:
-                       raise ValueError, 'fillet trochoid cannot be generated for helical gears'
+                       raise(ValueError, 'fillet trochoid cannot be generated for helical gears')
              # END OF CODE SECTION TO BE REMOVED
 
              # calculate tip height modification factor if possible (else set to default)
@@ -977,18 +994,18 @@ class CylindricalGearWheel(GearWheel):
              if self.data.has_key('a'):
                   if self.data.has_key('alpha_wt') and not self.data.has_key('z_2'):
                        if self.data.get('alpha_wt')<0:
-                            raise ValueError, 'service pressure angle non-positive'
+                            raise(ValueError, 'service pressure angle non-positive')
                        self.data.update({'a_d':self.data.get('a')*cos(radians(   \
                                          self.data.get('alpha_wt')))/cos(radians(  \
                                          self.data.get('alpha_t')))})
                        self.data.update({'z_2':int(self.data.get('a_d')*2/self.data.get(  \
                                          'm_t')-self.data.get('z'))})
-                  
+
                   elif self.data.has_key('z_2') and not self.data.has_key('alpha_wt'):
                        if not type(self.data.get('z_2'))==type(1):
-                            raise TypeError, 'number of teeth of counter gear not integer'
+                            raise(TypeError, 'number of teeth of counter gear not integer')
                        if self.data.get('z')<0 and self.data.get('z_2')<0:
-                            raise ValueError, 'two internal wheels cannot be paired'
+                            raise(ValueError, 'two internal wheels cannot be paired')
                        self.data.update({'a_d':self.data.get('m_t')*(self.data.get('z')+  \
                                          self.data.get('z_2'))/2})
                        self.data.update({'alpha_wt':degrees(acos(self.data.get('a_d')/  \
@@ -1002,15 +1019,15 @@ class CylindricalGearWheel(GearWheel):
                                          self.data.get('m_n')-(self.data.get('x')+x_2)})
                   else:
                        self.data.update({'k':self._k_default})
-             else:     
+             else:
                   self.data.update({'k':self._k_default})
 
              # root circle diameter: value check, calculate if not supplied
              if self.data.has_key('d_f'):
                   if self.data.get('d_f')>self.data.get('d'):
-                       raise ValueError, 'root circle diameter greater than pitch diameter'
+                       raise(ValueError, 'root circle diameter greater than pitch diameter')
                   if not sign(self.data.get('d_f'))==isexternal:
-                       raise ValueError, 'sign of root circle diameter'
+                       raise(ValueError, 'sign of root circle diameter')
              else:
                   self.data.update({'d_f':self.data.get('d')+2*self.data.get('x_E')*  \
                                     self.data.get('m_n')-2*(self.data.get('m_n')+  \
@@ -1019,9 +1036,9 @@ class CylindricalGearWheel(GearWheel):
              # tip diameter: value check, calculate if not supplied
              if self.data.has_key('d_a'):
                  #if self.data.get('d_a')<self.data.get('d'):
-                     #raise ValueError, 'tip diameter less than pitch diameter'
+                     #raise(ValueError, 'tip diameter less than pitch diameter'
                  if not sign(self.data.get('d_a'))==isexternal:
-                     raise ValueError, 'sign of tip diameter'
+                     raise(ValueError, 'sign of tip diameter')
              else:
                   self.data.update({'d_a':self.data.get('d')+2*self.data.get('x')*  \
                                     self.data.get('m_n')+2*self.data.get('m_n')+2*  \
@@ -1031,7 +1048,7 @@ class CylindricalGearWheel(GearWheel):
              # if not supplied
              if self.data.has_key('h_k'):
                   if self.data.get('h_k')<0:
-                       raise ValueError, 'value of tip chamfer negative'
+                       raise(ValueError, 'value of tip chamfer negative')
              elif self.data.has_key('d_Fa'):
                   self.data.update({'h_k':abs(self.data.get('d_a')-self.data.get('d_Fa'))/2})
              else:
@@ -1042,28 +1059,28 @@ class CylindricalGearWheel(GearWheel):
              if not self.data.has_key('s_aK'):
                   self.data.update({'s_aK':s_a-2*self.data.get('h_k')})
              if self.data.get('s_aK')<0:
-                  raise ValueError, 'remaining tooth thickness at tip negative'
+                  raise(ValueError, 'remaining tooth thickness at tip negative')
              if self.data.get('s_aK')>s_a:
-                  raise ValueError, 'remaining tip tooth thickness greater than tooth thickness'
-			 
-                  
+                  raise(ValueError, 'remaining tip tooth thickness greater than tooth thickness')
+
+
              # root form diameter: value check
              if self.data.has_key('d_Ff'):
                   if self.data.get('d_Ff')>self.data.get('d'):
-                       raise ValueError, 'root form diameter greater than pitch diameter'
+                       raise(ValueError, 'root form diameter greater than pitch diameter')
                   if self.data.get('d_Ff')<self.data.get('d_f'):
-                       raise ValueError, 'root form diameter less than root circle diameter'
+                       raise(ValueError, 'root form diameter less than root circle diameter')
                   if not sign(self.data.get('d_Ff'))==isexternal:
-                       raise ValueError, 'sign of root form diameter'
+                       raise(ValueError, 'sign of root form diameter')
 
-             # tip form diameter: value check       
+             # tip form diameter: value check
              if self.data.has_key('d_Fa'):
                   if self.data.get('d_Fa')<self.data.get('d'):
-                       raise ValueError, 'tip form diameter less than pitch diameter'
+                       raise(ValueError, 'tip form diameter less than pitch diameter')
                   if self.data.get('d_Fa')>self.data.get('d_a'):
-                       raise ValueError, 'tip form diameter greater than tip diameter'
+                       raise(ValueError, 'tip form diameter greater than tip diameter')
                   if not sign(self.data.get('d_Fa'))==isexternal:
-                       raise ValueError, 'sign of tip form diameter'
+                       raise(ValueError, 'sign of tip form diameter')
              else:
                   self.data.update({'d_Fa':self.data.get('d_a')-2*self.data.get('h_k')})
 
@@ -1072,10 +1089,10 @@ class CylindricalGearWheel(GearWheel):
              self.data.update({'d_s':self._d_s_default})
         if abs(self.data.get('d_s'))>self._tol_default:
              if not sign(self.data.get('d_s'))==isexternal:
-                  raise ValueError, 'sign of shaft diameter'
+                  raise(ValueError, 'sign of shaft diameter')
              if not self.data.get('d_s')<self.data.get('d_f'):
-                  raise ValueError, 'shaft diameter greater than root circle diameter'
-        
+                  raise(ValueError, 'shaft diameter greater than root circle diameter')
+
         # calculate tooth form coordinates if not supplied
         if not self.formcoords:
              self._makeFormCoords()
@@ -1086,7 +1103,7 @@ class CylindricalGearWheel(GearWheel):
         if not self._formwire:
              self._makeFormWire()
 
-        # cleanup temporary data (should not be attribute of single gearwheel)       
+        # cleanup temporary data (should not be attribute of single gearwheel)
         if self.data.has_key('z_2'):
              self.data.pop('z_2')
         if self.data.has_key('a'):
@@ -1108,13 +1125,13 @@ class CylindricalGearWheel(GearWheel):
 
         # module imports
         from numpy.linalg import norm
-        
+
         # tolerance for comparisons
         tol = self._tol_default*self.data.get('m_n')
 
         # indicator whether gear is external (number of teeth positive) or internal
         isexternal    = sign(self.data.get('z'))
-        
+
         # delete old form wire if existend
         if self._formwire:
              del(self._formwire)
@@ -1122,14 +1139,14 @@ class CylindricalGearWheel(GearWheel):
         toothform_wire = ShapeExtend_WireData()
 
         # check if form coordinates are present
-        if not self.formcoords:     
+        if not self.formcoords:
              _self.makeFormCoords()
 
         # transform formcoords to NumPy-array
         half_tooth = PythonOCCArrayToNumPyArray(self.formcoords)
 
         # convert to polar coordinates
-        half_tooth_polar = zeros([size(half_tooth, 0), 2])  
+        half_tooth_polar = zeros([size(half_tooth, 0), 2])
         for index in range(0, size(half_tooth, 0)):
              [r, phi] = CartesianCoordinatesToPolarCoordinates(half_tooth[index, 0], half_tooth[index, 1])
              half_tooth_polar[index, 0] = r
@@ -1143,11 +1160,11 @@ class CylindricalGearWheel(GearWheel):
                                   (isexternal*abs(half_tooth_polar[:,0])<=isexternal*(abs(self.data.get('d_Ff')/2.0+tol)))
         root_rounding_condition[nonzero(root_circle_condition)[0][-1]] = True  # edge points shall belong to both segments
         root_rounding_condition[0] = False    # the center of the gear wheel is not part of the root shape
-        
+
         # find points on involute
         involute_condition = (zeros([size(half_tooth, 0)])==1)
         for index in range(1, size(half_tooth, 0)):
-            s_yt, d_yc = self._toothThickness(2*isexternal*abs(half_tooth_polar[index, 0]))     
+            s_yt, d_yc = self._toothThickness(2*isexternal*abs(half_tooth_polar[index, 0]))
             if norm(array([-s_yt/2, d_yc/2])-half_tooth[index,:])<tol and isexternal*abs(half_tooth_polar[index,0])>=isexternal*abs(self.data.get('d_Ff')/2-tol):
                 involute_condition[index] = True
 
@@ -1173,7 +1190,7 @@ class CylindricalGearWheel(GearWheel):
                 else:
                     mindeg = 2
                     maxdeg = 5
-     
+
                 curve = Geom2dAPI_PointsToBSpline(NumPyArrayToPythonOCCArray(half_tooth[nonzero(condition)][:]), mindeg, maxdeg)
                 curve_qualified = Geom2dGcc_QualifiedCurve(Geom2dAdaptor_Curve(curve.Curve()), GccEnt_unqualified)
                 # make limiting vertices of segment curve
@@ -1183,16 +1200,16 @@ class CylindricalGearWheel(GearWheel):
                 end_point        = gp_Pnt2d(half_tooth[nonzero(condition)[0][-1]][0],   \
                                             half_tooth[nonzero(condition)[0][-1]][1])
                 end_vertex       = BRepBuilderAPI_MakeVertex(self._make3dGeomFrom2dGeom(end_point)).Vertex()
-                
+
                 # make edge from segment curve
                 edge = BRepBuilderAPI_MakeEdge(self._make3dGeomFrom2dGeom(curve.Curve().GetObject()).GetHandle(), \
                                                start_vertex, end_vertex).Edge()
                 toothform_wire.AddOriented(edge, TopAbs_FORWARD)
-            
+
         self._formwire  = toothform_wire.Wire()
 
 
-        
+
     def _makeFormCoords(self):
         """
         Tooth form coordinates in transverse cross-section (half tooth and half gap)
@@ -1212,18 +1229,18 @@ class CylindricalGearWheel(GearWheel):
 
         # tolerance for comparisons
         tol = self._tol_default*self.data.get('m_n')
-        
+
         # delete old form coordinates if existend
-        if self.formcoords:     
+        if self.formcoords:
              del(self.formcoords)
         if self._formwire:
              del(self._formwire)
 
-        
+
         # indicator whether gear is external (number of teeth positive) or internal
         isexternal    = sign(self.data.get('z'))
         inv_extension = False
-             
+
         # indices for adressing parts of tooth form
         lower_index          = 0
         start_rootcirc_index = lower_index+1        # one entry reserved for origin
@@ -1242,7 +1259,7 @@ class CylindricalGearWheel(GearWheel):
         # determine boundary of half tooth segment on root circle
         rootcirc_start_point = self.data.get('d_f')/2*array([-sin(radians(self.data.get('tau')/2)),   \
                                                               cos(radians(self.data.get('tau')/2))])
-        
+
         # determine how the root shape is defined and calculate significant points
         # root shape is circular in transverse cross-section
         if isexternal>0:        # for external gears
@@ -1254,11 +1271,11 @@ class CylindricalGearWheel(GearWheel):
                     s_yt, d_yc = self._toothThickness(self.data.get('d_Ff'))
                     fil_end_point   = array([-s_yt/2, d_yc/2])
                 # no tangency possible: undercut
-                elif (self.data.get('d_f')+4*self.data.get('rho_f') >= self.data.get('d_b')):  
+                elif (self.data.get('d_f')+4*self.data.get('rho_f') >= self.data.get('d_b')):
                     self.data.update({'d_Ff': self.data.get('d_b')})
                     s_yt, d_yc = self._toothThickness(self.data.get('d_b'))
                     fil_end_point   = array([-s_yt/2, d_yc/2])          # end of involute at base circle
-                    print 'Warning: undercutting occurs!'
+                    print('Warning: undercutting occurs!')
                 # in case all prior attempts to construct root fillet failed, the involute has to be extended with a straight tangential line
                 else:
                     self.data.update({'d_Ff': self.data.get('d_b')})
@@ -1266,12 +1283,12 @@ class CylindricalGearWheel(GearWheel):
                     s_yt, d_yc = self._toothThickness(self.data.get('d_b'))
                     nu = atan(s_yt/d_yc)
                     fil_end_point   = array([-d_tangent/2*sin(nu), d_tangent/2*cos(nu)])    # tangential extension of involute beyond base circle
-                    print 'Warning: involute had to be extended below base cicle to achieve root fillet tangency!'
+                    print('Warning: involute had to be extended below base cicle to achieve root fillet tangency!')
                     inv_extension = True
-            else:        
+            else:
                 # if root form circle diameter is supplied, it is forced strictly if possible
                 if (self.data.get('d_Ff')-self.data.get('d_f'))/2 > 2*self.data.get('rho_f'):   # check if root fillet circle fits beetween root form circle and root circle
-                    raise ValueError, 'root fillet radius too small: root shape cannot be determined'
+                    raise(ValueError, 'root fillet radius too small: root shape cannot be determined')
                 s_yt, d_yc = self._toothThickness(self.data.get('d_Ff'))
                 if abs(self.data.get('d_Ff')) >= abs(self.data.get('d_b')):  # fillet ends at root form circle
                     fil_end_point   = array([-s_yt/2, d_yc/2])
@@ -1279,9 +1296,9 @@ class CylindricalGearWheel(GearWheel):
                     nu = atan(s_yt/d_yc)
                     fil_end_point   = array([-self.data.get('d_Ff')*sin(nu),  \
                                               self.data.get('d_Ff')*cos(nu)])
-                    print 'Warning: involute had to be extended below base cicle to enforce root form circle diameter!'
+                    print('Warning: involute had to be extended below base cicle to enforce root form circle diameter!')
                     inv_extension = True
-                    
+
         else:       # for internal gears
             if not self.data.has_key('d_Ff'):
                 # root circle is tangent to involute
@@ -1290,7 +1307,7 @@ class CylindricalGearWheel(GearWheel):
             else:
                 # if root form circle diameter is supplied, it is forced strictly if possible
                 if (self.data.get('d_Ff')-self.data.get('d_f'))/2 > 2*self.data.get('rho_f'):   # check if root fillet circle fits beetween root form circle and root circle
-                    raise ValueError, 'root fillet radius too small: root shape cannot be determined'               
+                    raise(ValueError, 'root fillet radius too small: root shape cannot be determined')
             s_yt, d_yc = self._toothThickness(self.data.get('d_Ff'))
             fil_end_point = array([-s_yt/2, d_yc/2])
 
@@ -1309,7 +1326,7 @@ class CylindricalGearWheel(GearWheel):
         # if boundary point and fillet center are outside half tooth segment the shape of the root fillet
         # cannot be determined (root fillet curve is not continously differentiable and d_f is not matched)
         if abs(atan(fil_start_point[0]/fil_start_point[1])) > abs(radians(self.data.get('tau')/2)):
-            raise ValueError, 'root fillet radius too large: root shape cannot be determined'
+            raise(ValueError, 'root fillet radius too large: root shape cannot be determined')
 
         # determine boundary points of involute
         s_yt, d_yc = self._toothThickness(self.data.get('d_Ff'))
@@ -1322,7 +1339,7 @@ class CylindricalGearWheel(GearWheel):
         tipcirc_start_point = array([-self.data.get('d_a')/2*sin(nu),  \
                                       self.data.get('d_a')/2*cos(nu)])   # tip circle starts at end of tip chamfer
         tipcirc_end_point = array([0.0, self.data.get('d_a')/2])         # tip circle ends at symmetry line
-            
+
         # create array for tooth form coordinates
         formcoord_array = zeros([upper_index, 2])
 
@@ -1341,7 +1358,7 @@ class CylindricalGearWheel(GearWheel):
                 n += 1
 
         # compute points on root fillet
-        print 'Warning: circular root fillet in transverse cross-section assumed!'
+        print('Warning: circular root fillet in transverse cross-section assumed!')
         phi_start = asin((fil_start_point[0]-fil_center_point[0])/self.data.get('rho_f'))              # starting angle of root fillet
         if abs(phi_start-acos(-(fil_start_point[1]-fil_center_point[1])/self.data.get('rho_f')))>tol:  # computation is not unique
             phi_start = pi-phi_start
@@ -1355,8 +1372,8 @@ class CylindricalGearWheel(GearWheel):
                 formcoord_array[index]=fil_center_point+self.data.get('rho_f')*array([sin(phi_start+n*delta_phi), -isexternal*cos(phi_start+n*delta_phi)])
                 n += 1
         if (inv_start_point-fil_end_point).any():                         # check if a root fillet circle connects directly to flank
-            print 'involute was extended'                                 # placeholder for future
-            
+            print('involute was extended')                                # placeholder for future
+
         # compute points on flank
         d_start = isexternal*norm(inv_start_point,2)*2             # start diameter of involute flank (root form diameter)
         d_end   = isexternal*norm(inv_end_point,2)*2               # end diameter of involute flank (tip form diameter)
@@ -1369,13 +1386,13 @@ class CylindricalGearWheel(GearWheel):
 
         # compute points on tip chamfer
         if self.data.has_key('h_k') and (self.data.get('h_k') > 0):
-            print 'Warning: straight tip chamfer assumed!'
+            print('Warning: straight tip chamfer assumed!')
             delta_k = 1/(self.points_chamfer-1)
             n = 0
             for index in range(end_involute_index, end_chamfer_index):
                 formcoord_array[index] = inv_end_point+(tipcirc_start_point-inv_end_point)*n*delta_k
                 n += 1
-        
+
         # compute points on tip circle
         phi_start = -asin(2*tipcirc_start_point[0]/self.data.get('d_a'))                # starting angle of tip circle
         if abs(phi_start-acos(2*tipcirc_start_point[1]/self.data.get('d_a')))>tol:      # computation is not unique
@@ -1391,21 +1408,21 @@ class CylindricalGearWheel(GearWheel):
             for index in range(end_chamfer_index+1, end_tipcirc_index):
                 formcoord_array[index]=self.data.get('d_a')/2*array([-sin(phi_start+n*delta_phi), isexternal*cos(phi_start+n*delta_phi)])
                 n += 1
-        
+
         # compute points on tangential extension of involute below base circle
         if inv_extension:
             delta_k = 1/(self.points_ext-1)
             for n in range(1, self.points_ext-1):
                 formcoord_array = insert(formcoord_array, start_involute_index, inv_start_point+(fil_end_point-inv_start_point)*n*delta_k, axis=0)
-        
+
         # transform formcoords to NumPy-array
         self.formcoords = NumPyArrayToPythonOCCArray(formcoord_array)
 
         # remove redundant entries and set class attributes
         self.formcoords = self._makeUnique(self.formcoords)
 
-        
-        
+
+
     def makeTooth(self):
         """
         Tooth form in transverse cross-section (one tooth and one gap, tooth centered)
@@ -1418,11 +1435,11 @@ class CylindricalGearWheel(GearWheel):
         toothcoords    : coordinates of one tooth in transverse cross-section (TColgp_Array1OfPnt2d, pythonOCC)
         toothform_wire : wire of tooth form (TopoDS_Wire, pythonOCC)
         """
-        
+
         # check if tooth form coordinates are available: calculate otherwise
         if not self.formcoords:
              self._makeFormCoords()
-        if not self._formwire:     
+        if not self._formwire:
              _self.makeFormWire()
 
         # set up transformation matrix
@@ -1431,7 +1448,7 @@ class CylindricalGearWheel(GearWheel):
         mirror_axis  = gp_Ax1(origin_point, mirror_dir)
         mirror_trans = gp_Trsf()
         mirror_trans.SetMirror(mirror_axis)
-        
+
         # mirror wire of tooth form to get complete tooth
         formwire_trans    = BRepBuilderAPI_Transform(self._formwire, mirror_trans)
         formwire_mirrored = TopoDS_Cast.Wire(formwire_trans.Shape())
@@ -1439,7 +1456,7 @@ class CylindricalGearWheel(GearWheel):
         formwire_mirrored_reversed.AddOriented(formwire_mirrored, TopAbs_REVERSED)
         formwire_mirrored_reversed.Reverse()
         toothform_wire    = ShapeExtend_WireData()
-        toothform_wire.AddOriented(self._formwire, TopAbs_REVERSED)       
+        toothform_wire.AddOriented(self._formwire, TopAbs_REVERSED)
         toothform_wire.AddOriented(formwire_mirrored_reversed.Wire(), TopAbs_FORWARD)
         toothcoords = TColgp_Array1OfPnt2d(1, 2*(self.formcoords.Length()-1))  # origin-point not required
 
@@ -1470,7 +1487,7 @@ class CylindricalGearWheel(GearWheel):
 
         # tolerance for comparisons
         tol = self._tol_default*self.data.get('m_n')
-        
+
         toothcoords, toothwire  = self.makeTooth()
 
         # indicator whether gear is external (number of teeth positive) or internal
@@ -1591,7 +1608,7 @@ class CylindricalGearWheel(GearWheel):
             if not self.data.get('d_s')==0.0:
                 face_last.Add(TopoDS_Cast.Wire(wire_end.Shape().Reversed()))
         else:
-             
+
              face_first = BRepBuilderAPI_MakeFace(plane_start,  \
              TopoDS_Cast.Wire(wire_start.Shape().Reversed()))
              face_first.Add(wire_first)
@@ -1603,7 +1620,7 @@ class CylindricalGearWheel(GearWheel):
              vec_path      = gp_Vec(pnt_start, pnt_end)
              face_shaft    = BRepPrimAPI_MakePrism(wire_start.Wire(), vec_path)
         elif self.data.get('z')<0:
-             raise ValueError, 'internal gear needs shaft diameter for geometry construction'
+             raise(ValueError, 'internal gear needs shaft diameter for geometry construction')
 
         # make shell of gearwheel
         shell_final = BRepBuilderAPI_Sewing()
@@ -1653,15 +1670,15 @@ class CylindricalGearWheel(GearWheel):
         # mass density: value check
         if rho:
             if rho<=0.0:
-                raise ValueError, 'non-positive mass density'
+                raise(ValueError, 'non-positive mass density')
         else:
             rho = 1.0   # set to default if not supplied
-            print 'Warning: mass density set to 1.0'
+            print('Warning: mass density set to 1.0')
 
         # create OCC-solid if not supplied
         if not solid:
             solid = self.makeOCCSolid()
-            
+
         eps = 1E-7      # relative error for volume computation
         reference_frame = gp_Pnt(0.0, 0.0, 0.0)    # center of gear wheel (= center of mass)
 
@@ -1680,11 +1697,11 @@ class CylindricalGearWheel(GearWheel):
             for column_index in range(1,4):
                 row.append(inertia_prop.MatrixOfInertia().Value(row_index, column_index)*rho)
             J.append(row)
-                    
+
         # radius of gyration around rotation axis
         rotation_axis = gp_Ax1(reference_frame, gp_Dir(0.0, 0.0, 1.0))
         r_g = inertia_prop.RadiusOfGyration(rotation_axis)
-        
+
         return m, J, r_g
 
 
@@ -1699,7 +1716,7 @@ class GearPair:
     # Attributes: gear wheels
     Pinion = None  # GearWheel-object
     Gear   = None  # GearWheel-object
-        
+
 
     def __str__(self):
         """
@@ -1711,24 +1728,24 @@ class GearPair:
         OUTPUT:
         string representation of class
         """
-        
+
         outstr = 'gear pair data:\n'
         # output gear pair data
         for date in self.data:
              outstr += date.ljust(15)+':\t'+str(self.data.get(date))+'\n'
 
         # output pinion data
-        if self.Pinion:    
+        if self.Pinion:
              outstr += '\npinion data:\n'
              outstr += str(self.Pinion)
 
         # output gear data
-        if self.Gear:    
+        if self.Gear:
              outstr += '\ngear data:\n'
              outstr += str(self.Gear)
 
         return outstr
-    
+
 
     def __init__(self, pairdata, Pinion=None, Gear=None):
         """
@@ -1755,11 +1772,11 @@ class GearPair:
         INPUT parameter:
         Pinion     : pinion (GearWheel-instance)
         """
- 
+
         if isinstance(Pinion, GearWheel):
              self.Pinion = Pinion
         else:
-             raise TypeError, 'GearWheel instance expected'
+             raise(TypeError, 'GearWheel instance expected')
 
 
 
@@ -1774,7 +1791,7 @@ class GearPair:
         if isinstance(Gear, GearWheel):
              self.Gear = Gear
         else:
-             raise TypeError, 'GearWheel instance expected'
+             raise(TypeError, 'GearWheel instance expected')
 
 
 class CylindricalGearPair(GearPair):
@@ -1786,7 +1803,7 @@ class CylindricalGearPair(GearPair):
 
     # Attributes: default settings for parameters
     _A_a_default       =  0.0    # default value for centre distance allowance
-    
+
     def __init__(self, pairdata, Pinion=None, Gear=None):
         """
         Initialization of GearPair-object
@@ -1817,32 +1834,32 @@ class CylindricalGearPair(GearPair):
 
         # value check: addendum must be supplied
         if not pairdata.has_key('a'):
-             raise AttributeError, 'centre distance not found'
-             
+             raise(AttributeError, 'centre distance not found')
+
         GearPair.__init__(self, pairdata, Pinion, Gear)
 
         if self.Pinion and self.Gear:
-            
+
              # compatibility check (pinion to gear)
              if not self.Pinion.data.get('m_n')==self.Gear.data.get('m_n'):
-                  raise ValueError, 'gear and pinion cannot have different module'
+                  raise(ValueError, 'gear and pinion cannot have different module')
              if sign(self.Pinion.data.get('z'))==sign(self.Gear.data.get('z')):
                   if not -self.Pinion.data.get('beta')==self.Gear.data.get('beta'):
-                      raise ValueError, 'helix angles of gear and pinion not compatible'
+                      raise(ValueError, 'helix angles of gear and pinion not compatible')
              else:
                   if not self.Pinion.data.get('beta')==self.Gear.data.get('beta'):
-                      raise ValueError, 'helix angles of gear and pinion not compatible'
-                    
+                      raise(ValueError, 'helix angles of gear and pinion not compatible')
+
              # warning, because addendum will be set for GearWheel-objects
              if self.Pinion.data.has_key('a') or self.Gear.data.has_key('a'):
                   warn('addendum will be overwritten', UserWarning)
-                  
+
              # calculate and set gear pair parameters
              # addendum
              self.data.update({'a_d':self.Pinion.data.get('m_n')/2*   \
                                      (self.Pinion.data.get('z')+self.Gear.data.get('z'))/  \
                                      cos(radians(self.Pinion.data.get('beta')))})
-             
+
              # pitch angles
              self.data.update({'alpha_wt':degrees(acos((self.Pinion.data.get('z')+   \
                                           self.Gear.data.get('z'))*self.Pinion.data.get('m_t')*  \
@@ -1850,15 +1867,15 @@ class CylindricalGearPair(GearPair):
                                           self.data.get('a')/2))})
              self.data.update({'alpha_n':self.Pinion.data.get('alpha_n'),  \
                                'alpha_t':self.Pinion.data.get('alpha_t')})
-             
+
              # set parameters of GearWheel-objects (old values are overwritten)
              self.Pinion.data.update({'z_2':self.Gear.data.get('z'),  \
                                       'alpha_wt':self.data.get('alpha_wt'),  \
-                                      'a':self.data.get('a'),'a_d':self.data.get('a_d')})            
+                                      'a':self.data.get('a'),'a_d':self.data.get('a_d')})
              self.Gear.data.update({'z_2':self.Pinion.data.get('z'),  \
                                     'alpha_wt':self.data.get('alpha_wt'),  \
                                     'a':self.data.get('a'),'a_d':self.data.get('a_d')})
-             
+
              # addendum modification factors
              x_sum = (self.Pinion.data.get('z')+self.Gear.data.get('z'))*  \
                      (inv(self.data.get('alpha_wt'))-inv(self.data.get('alpha_t')))/  \
@@ -1866,22 +1883,22 @@ class CylindricalGearPair(GearPair):
              if self.Pinion.data.get('x')!=0.0 and not self.Gear.data.get('x')!=0.0:
                   self.Gear.data.update({'x':x_sum-self.Pinion.data.get('x')})
              elif self.Gear.data.get('x')!=0.0 and not self.Pinion.data.get('x')!=0.0:
-                  self.Pinion.data.update({'x':x_sum-self.Gear.data.get('x')})   
+                  self.Pinion.data.update({'x':x_sum-self.Gear.data.get('x')})
              elif self.Pinion.data.get('x')==0.0 and self.Gear.data.get('x')==0.0:   # ensure compatibility
                   self.Pinion.data.update({'x':x_sum})
                   self.Gear.data.update({'x':0.0})
              else:
                   self.Gear.data.update({'x':x_sum-self.Pinion.data.get('x')})
-                  
+
              # normal modul
              self.data.update({'m_n':self.Pinion.data.get('m_n')})
-             
+
              # tip height modification factor
              self.data.update({'k':(self.data.get('a')-self.data.get('a_d'))/  \
                                self.data.get('m_n')-x_sum})
              self.Pinion.data.update({'k':self.data.get('k')})
              self.Gear.data.update({'k':self.data.get('k')})
-             
+
              # update gear wheel objects
              self.Pinion.formcoords = None
              self.Pinion._formwire = None
@@ -1897,7 +1914,7 @@ class CylindricalGearPair(GearPair):
                                                self.Gear.data.get('d_b')**2)-  \
                                           (self.Pinion.data.get('d_b')+self.Gear.data.get('d_b'))*  \
                                           tan(radians(self.data.get('alpha_wt'))))/2})
-             
+
              # transverse contact ratio
              self.data.update({'epsilon_alpha':2*self.data.get('g_alpha')/self.Pinion.data.get('d')/  \
                                radians(self.Pinion.data.get('tau'))})
@@ -1944,7 +1961,7 @@ class Tool:
         OUTPUT:
         string representation of class
         """
-        
+
         outstr = 'rack tool type:\n'
         # output tool type
         outstr += 'root type:   \t'.ljust(15)+self._root_type+'\n'
@@ -1953,14 +1970,14 @@ class Tool:
              outstr += 'no\n\n'
         else:
              outstr += 'yes\n\n'
-             
+
         # output tool data
         outstr += 'tool data:\n'
         for date in self.data:
              outstr += date.ljust(15)+':\t'+str(self.data.get(date))+'\n'
 
         return outstr
-    
+
 
     def __init__(self, tooldata):
         """
@@ -1981,7 +1998,7 @@ class Tool:
         OUTPUT:
         data attribute of class (dictionary)
         """
-        
+
         return self.data
 
 
@@ -1993,7 +2010,7 @@ class Tool:
         tooldata : dictionary, containing geometric data of tool
                    for content, see method __init__
         """
-        
+
         self.__init__(tooldata)
 
 
@@ -2005,7 +2022,7 @@ class Tool:
         tooldata : dictionary, containing geometric data of gear
                    for content, see method __init__
         """
-        
+
         tempdata = self.data.copy()
         tempdata.update(tooldata)
         self.__init__(tooldata)
@@ -2022,7 +2039,7 @@ class Tool:
 
         return point[1]
 
-        
+
 
 
 class ToothedRackTool(Tool):
@@ -2037,7 +2054,7 @@ class ToothedRackTool(Tool):
                      positive to the top (that is to the dedendum line of the tool's profile)
     - origin:        at intersection point of midline of tooth and datum line
     """
-  
+
     # Attributes: default settings for parameters (DIN 3972, profile II)
     _pr_P0_default      =  0.0    # default value for protuberance (no protuberance)
     _h_aP0_default      =  1.20   # default value for addendum factor of the standard basic rack tooth profile
@@ -2121,24 +2138,24 @@ class ToothedRackTool(Tool):
 
         # module must be supplied
         if not self.data.has_key('m'):
-             raise AttributeError, 'no module supplied'
+             raise(AttributeError, 'no module supplied')
         # module value check
         if self.data.get('m')<=0:
-             raise ValueError, 'non-positive module'
-            
+             raise(ValueError, 'non-positive module')
+
         # set pressure angle to default if not supplied
         if not self.data.has_key('alpha_P0'):
              self.data.update({'alpha_P0':self._alpha_P0_default})
         # pressure angle value check
         if self.data.get('alpha_P0')<=0:
-             raise ValueError, 'non-positive pressure angle'
+             raise(ValueError, 'non-positive pressure angle')
 
         # set type of tool
         if self.data.has_key('alpha_KP0'):
              self._root_type = 'chamfered'
         else:
              self._root_type = 'circular'
-             
+
         if self.data.has_key('pr_P0') and self.data.get('pr_P0')>0:
              self._tip_type = 'protuberance'
         else:
@@ -2152,7 +2169,7 @@ class ToothedRackTool(Tool):
                   # crest rounding radius value and consistency check
                   if self.data.has_key('rho_aP0'):
                        if not self.data.get('rho_aP0')==rho_aP0:
-                            raise ValueError, 'tip definition inconsistent'
+                            raise(ValueError, 'tip definition inconsistent')
                   else:
                        self.data.update({'rho_aP0':rho_aP0})
              if self.data.has_key('rho_aP0'):
@@ -2161,7 +2178,7 @@ class ToothedRackTool(Tool):
                   # addendum value and consistency check
                   if self.data.has_key('h_aP0'):
                        if not self.data.get('h_aP0')==h_aP0:
-                            raise ValueError, 'tip definition inconsistent'
+                            raise(ValueError, 'tip definition inconsistent')
                   else:
                        self.data.update({'h_aP0':h_aP0})
 
@@ -2172,7 +2189,7 @@ class ToothedRackTool(Tool):
                   # addendum value and consistency check
                   if self.data.has_key('h_aP0'):
                        if not self.data.get('h_aP0')==h_aP0:
-                            raise ValueError, 'tip definition inconsistent'
+                            raise(ValueError, 'tip definition inconsistent')
                   else:
                        self.data.update({'h_aP0':h_aP0})
              if self.data.has_key('h_prP0') and self.data.has_key('alpha_prP0') and self.data.has_key('rho_aP0'):
@@ -2183,7 +2200,7 @@ class ToothedRackTool(Tool):
                   # protuberance value and consistency check
                   if self.data.has_key('pr_P0'):
                        if not self.data.get('pr_P0')==pr_P0:
-                            raise ValueError, 'protuberance definition inconsistent'
+                            raise(ValueError, 'protuberance definition inconsistent')
                   else:
                        self.data.update({'pr_P0':pr_P0})     # this case cannot occur
              if self.data.has_key('h_prP0') and self.data.has_key('alpha_prP0') and self.data.has_key('pr_P0'):
@@ -2194,7 +2211,7 @@ class ToothedRackTool(Tool):
                   # crest rounding radius value and consistency check
                   if self.data.has_key('rho_aP0'):
                        if not self.data.get('rho_aP0')==rho_aP0:
-                            raise ValueError, 'tip definition inconsistent'
+                            raise(ValueError, 'tip definition inconsistent')
                   else:
                        self.data.update({'rho_aP0':rho_aP0})
              # the calculation of alpha_prP0 from the other parameters is omitted, as the corresponding equation
@@ -2208,7 +2225,7 @@ class ToothedRackTool(Tool):
                   # tooth root radius value and consistency check
                   if self.data.has_key('rho_fP0'):
                        if not self.data.get('rho_fP0')==rho_fP0:
-                            raise ValueError, 'root definition inconsistent'
+                            raise(ValueError, 'root definition inconsistent')
                   else:
                        self.data.update({'rho_fP0':rho_fP0})
              if self.data.has_key('rho_fP0'):
@@ -2217,13 +2234,13 @@ class ToothedRackTool(Tool):
                   # dedendum value and consistency check
                   if self.data.has_key('h_fP0'):
                        if not self.data.get('h_fP0')==h_fP0:
-                            raise ValueError, 'root definition inconsistent'
+                            raise(ValueError, 'root definition inconsistent')
                   else:
                        self.data.update({'h_fP0':h_fP0})
 
         # check and set tooth depth, addendum and dedendum
         if not self.data.has_key('h_P0'):
-            
+
             # set addendum to default if not supplied
             if not self.data.has_key('h_aP0'):
                  self.data.update({'h_aP0':self._h_aP0_default*self.data.get('m')})
@@ -2251,46 +2268,46 @@ class ToothedRackTool(Tool):
 
         # tooth depth value check
         if self.data.get('h_P0')<=0:
-             raise ValueError, 'non-positive tooth depth'
+             raise(ValueError, 'non-positive tooth depth')
         # addendum depth value check
         if self.data.get('h_aP0')<=0:
-             raise ValueError, 'non-positive addendum'
+             raise(ValueError, 'non-positive addendum')
         # dedendum depth value check
         if self.data.get('h_fP0')<=0:
-             raise ValueError, 'non-positive dedendum'
+             raise(ValueError, 'non-positive dedendum')
         # check: sum of addendum and dedendum must be tooth depth
         if not self.data.get('h_fP0')+self.data.get('h_aP0')==self.data.get('h_P0'):
-             raise ValueError, 'sum of addendum and dedendum does not equal tooth depth'
-            
+             raise(ValueError, 'sum of addendum and dedendum does not equal tooth depth')
+
         # set crest rounding radius to default if not supplied
         if not self.data.has_key('rho_aP0'):
              self.data.update({'rho_aP0':self._rho_aP0_default*self.data.get('m')})
         # crest rounding radius value check
         if self.data.get('rho_aP0')<0:
-             raise ValueError, 'negative crest rounding radius'
+             raise(ValueError, 'negative crest rounding radius')
 
         # tooth root radius and chamfered flank pressure angle are exclusive
         if self.data.has_key('rho_fP0') and self.data.has_key('alpha_KP0'):
-             raise AttributeError, 'root type can either be circular or chamfered'
-             
+             raise(AttributeError, 'root type can either be circular or chamfered')
+
         # set tooth root radius to default if not supplied and no chamfered flank pressure angle is defined
         if not self.data.has_key('rho_fP0') and not self.data.has_key('alpha_KP0'):
              self.data.update({'rho_fP0':self._rho_fP0_default*self.data.get('m')})
         # tooth root radius value check
         if self.data.has_key('rho_fP0') and self.data.get('rho_fP0')<0:
-             raise ValueError, 'negative tooth root radius'
+             raise(ValueError, 'negative tooth root radius')
 
         # check if chamfered flank definition is sufficient (pressure angle + form dedendum)
         if self.data.has_key('alpha_KP0'):
              if not self.data.has_key('h_FfP0'):
-                  raise AttributeError, 'chamfered flank definition not complete'
+                  raise(AttributeError, 'chamfered flank definition not complete')
              elif self.data.get('h_FfP0')<=0:
-                  raise ValueError, 'non-positive form dedendum'
+                  raise(ValueError, 'non-positive form dedendum')
 
         # protuberance value check
         if self.data.has_key('pr_P0'):
              if self.data.get('pr_P0')<0:
-                  raise ValueError, 'negative protuberance'
+                  raise(ValueError, 'negative protuberance')
              else:
                   # set protuberance flank pressure angle to default if not supplied
                   if not self.data.has_key('alpha_prP0'):
@@ -2298,14 +2315,14 @@ class ToothedRackTool(Tool):
 
         # protuberance flank pressure angle value check
         if self.data.has_key('alpha_prP0') and self.data.get('alpha_prP0')<0:
-             raise ValueError, 'negative protuberance flank pressure angle'
+             raise(ValueError, 'negative protuberance flank pressure angle')
 
         # calculate tooth thickness if not supplied
         if not self.data.has_key('s_P0'):
              self.data.update({'s_P0':pi*self.data.get('m')/2})
         # tooth thickness value check
         if self.data.get('s_P0')<=0:
-             raise ValueError, 'tooth thickness'
+             raise(ValueError, 'tooth thickness')
 
         # calculate characteristic points of rack profile (details see above)
         self._P_R  = array([self.data.get('s_P0')/2.0, 0.0])
@@ -2362,7 +2379,7 @@ class ToothedRackTool(Tool):
         self._s_P_4 = self._getParameterLimit(self._P_4)
         self._s_P_5 = self._getParameterLimit(self._P_5)
         self._s_P_6 = self._getParameterLimit(self._P_6)
-      
+
 
     def getCurvePoint(self, parameter, difforder=0):
         """
@@ -2384,10 +2401,10 @@ class ToothedRackTool(Tool):
         parameter:  curve parameter (numeric)
         difforder:  differentiate difforder times with respect to curve parameter (0, 1, or 2)
                     optional - set to 0 if not supplied
-     
+
         OUTPUT:
         curve_property:    the requested property of the profile (numeric, 2x1-NumPy-array)
-        """ 
+        """
 
         # module imports
         from numpy.linalg import norm
@@ -2400,7 +2417,7 @@ class ToothedRackTool(Tool):
              Ps      = self._P_7+s*(self._P_6-self._P_7)/norm(self._P_6-self._P_7)
              dP_ds   = (self._P_6-self._P_7)/norm(self._P_6-self._P_7)
              d2P_ds2 = array([0.0, 0.0])
-             
+
         # point on crest rounding
         elif s<=self._s_P_5:
              s_      = s-self._s_P_6
@@ -2430,7 +2447,7 @@ class ToothedRackTool(Tool):
                   Ps      = self._P_5+s_*(self._P_3-self._P_5)/norm(self._P_3-self._P_5)
                   dP_ds   = (self._P_3-self._P_5)/norm(self._P_3-self._P_5)
              d2P_ds2 = array([0.0, 0.0])
-             
+
         # point on root rounding or chamfered flank
         elif s<=self._s_P_2:
              # tool with circular root rounding
@@ -2467,7 +2484,7 @@ class ToothedRackTool(Tool):
              elif difforder==2:
                   return d2P_ds2
              else:
-                  raise AttributeError, 'differentiation order maust be 0, 1 or 2'
+                  raise(AttributeError, 'differentiation order maust be 0, 1 or 2')
         else:                 # negative parameter: mirror at midline of tooth and maintain continuous derivative
              if difforder==0:
                   return dot(mirror, Ps)
@@ -2476,7 +2493,7 @@ class ToothedRackTool(Tool):
              elif difforder==2:
                   return dot(mirror, d2P_ds2)
              else:
-                  raise AttributeError, 'differentiation order maust be 0, 1 or 2'
+                  raise(AttributeError, 'differentiation order maust be 0, 1 or 2')
 
 
     def getY(self, X):
@@ -2486,11 +2503,11 @@ class ToothedRackTool(Tool):
         # point on dedendum line
         if s<=self._P_6[0]:
              y = self._P_6[1]
-             
+
         # point on crest rounding
         elif s<=self._P_5[0]:
              y = self._M_2[1]-self.data.get('rho_aP0')*cos(asin((s-self._M_2[0])/self.data.get('rho_aP0')))
-             
+
         # point on protuberance flank or flank
         elif s<=self._P_3[0]:
              # tool with protuberance
@@ -2505,7 +2522,7 @@ class ToothedRackTool(Tool):
              else:
                   # point on flank
                   y = self._P_5[1]+(s-self._P_5[0])*(self._P_3[1]-self._P_5[1])/(self._P_3[0]-self._P_5[0])
-             
+
         # point on root rounding or chamfered flank
         elif s<=self._P_2[0]:
              # tool with circular root rounding
@@ -2516,7 +2533,7 @@ class ToothedRackTool(Tool):
              else:
                   # point on chamfered flank
                   y = self._P_3[1]+(s-self._P_3[0])*(self._P_2[1]-self._P_3[1])/(self._P_2[0]-self._P_3[0])
-                  
+
         # point on addendum line (that is extended infinitely for parameters > self._s_P_1)
         else:
              y  = self._P_2[1]
@@ -2536,7 +2553,7 @@ class ToothedRackTool(Tool):
         point:      curve parameter of this characteristic point is returned (2x1-NumPy-array)
                     optional: maximum value (corresponds to self._P_1) is returned
                               if not supplied
-     
+
         OUTPUT:
         param_limit:  maximum absolute value of curve parameter (numeric)
         """
@@ -2547,16 +2564,16 @@ class ToothedRackTool(Tool):
 
         if allequal(point,self._P_7):           # curve parameter of point self._P_7
              return 0.0
-          
+
         s_max  = norm(self._P_6-self._P_7)      # length of line between tooth's symmetry line and begin of crest rounding
         if allequal(point,self._P_6):           # curve parameter of point self._P_6
              return s_max
-          
+
         s_max += asin((self._P_5[0]-self._M_2[0])/self.data.get('rho_aP0'))*         \
                  self.data.get('rho_aP0')       # arc length of crest rounding (caution: expression ambiguous)
         if allequal(point,self._P_5):           # curve parameter of point self._P_5
              return s_max
-          
+
         if self._tip_type=='protuberance':
              s_max += norm(self._P_4-self._P_5) # length of protuberance flank
              if allequal(point,self._P_4):      # curve parameter of point self._P_4
@@ -2566,10 +2583,10 @@ class ToothedRackTool(Tool):
              if allequal(point,self._P_4):      # curve parameter of point self._P_4 (point non-existent for tools without protuberance)
                   return None
              s_max += norm(self._P_3-self._P_5) # length of flank
-             
+
         if allequal(point,self._P_3):           # curve parameter of point self._P_3
              return s_max
-          
+
         if self._root_type=='circular':
              s_max += (acos((self._P_2[0]-self._M_1[0])/-self.data.get('rho_fP0'))-   \
                        acos((self._P_3[0]-self._M_1[0])/-self.data.get('rho_fP0')))*  \
@@ -2578,9 +2595,9 @@ class ToothedRackTool(Tool):
              s_max += norm(self._P_2-self._P_3)  # length of chamfer flank
         if allequal(point,self._P_2):            # curve parameter of point self._P_2
              return s_max
-             
+
         s_max += norm(self._P_1-self._P_2)       # length of line between start of root rounding and symmetry line of gap
-        
+
         return s_max
 
 
@@ -2604,7 +2621,7 @@ class Machine:
         OUTPUT:
         string representation of class
         """
-        
+
         outstr = 'machine data:\n'
 
         # output machine data
@@ -2621,7 +2638,7 @@ class Machine:
              outstr += str(self.blank)
 
         return outstr
-    
+
 
     def __init__(self, machinedata, tool, blank=None):
         """
@@ -2644,7 +2661,7 @@ class Machine:
         OUTPUT:
         data attribute of class (dictionary)
         """
-        
+
         return self.data
 
 
@@ -2656,7 +2673,7 @@ class Machine:
         machinedata : dictionary, containing settings of machine
                       for content, see method __init__
         """
-        
+
         self.__init__(machinedata)
 
 
@@ -2668,7 +2685,7 @@ class Machine:
         machinedata : dictionary, containing settings of machine
                       for content, see method __init__
         """
-        
+
         tempdata = self.data.copy()
         tempdata.update(machinedata)
         self.__init__(machinedata)
@@ -2681,12 +2698,12 @@ class Machine:
         INPUT parameters:
         tool : cutting tool of machine (Tool instance)
         """
-        
+
         # tool: type and value check
         if not isinstance(tool, Tool):
-             raise TypeError, 'instance of Tool-class expected'
+             raise(TypeError, 'instance of Tool-class expected')
         if not isinstance(tool, ToothedRackTool):
-             raise TypeError, 'non rack-type cutters not implemented'
+             raise(TypeError, 'non rack-type cutters not implemented')
 
         self.tool = tool
 
@@ -2712,10 +2729,10 @@ class Machine:
         INPUT parameters:
         blank : blank for machine (Blank)
         """
-        
+
         # blank: type and value check
         if not isinstance(blank, Blank):
-             raise TypeError, 'instance of Blank-class expected'
+             raise(TypeError, 'instance of Blank-class expected')
 
         self.blank = blank
 
@@ -2732,8 +2749,8 @@ class Machine:
         """
 
         return self.blank
-        
-            
+
+
 
 class GearHobber(Machine):
     """
@@ -2757,8 +2774,8 @@ class GearHobber(Machine):
     # default settings for envelope check
     _no_supp_pnts_default   = 100     # default value for number of support points used to construct spline
     _zero_tolerance_default = 1.0E-8  # default value for zero tolerance (below this value is assumed to be zero)
-    
-   
+
+
     def __init__(self, machinedata, tool, blank=None):
         """
         Initialization of GearHobber-object
@@ -2777,10 +2794,10 @@ class GearHobber(Machine):
         beta     : helix angle (numeric)[degrees]
                    optional - set equal 0.0 if not supplied
         A_s      : tooth thickness allowance in normal cross-section (numeric, negative)
-                   optional - set equal 0.0 if not supplied 
+                   optional - set equal 0.0 if not supplied
         q        : machining allowance (numeric)
                    optional - set equal 0.0 if not supplied
-        
+
         All input parameters above are arranged in a dictionary. The keys are
         the names of the parameters as listed above.
         Some checks on the values are made, but these are far from
@@ -2797,34 +2814,34 @@ class GearHobber(Machine):
 
         # check if number of teeth or pitch diameter is supplied
         if not self.data.has_key('z') and not self.data.has_key('d'):
-             raise AttributeError, 'either number of teeth or pitch diameter must be supplied'
+             raise(AttributeError, 'either number of teeth or pitch diameter must be supplied')
 
         # number of teeth: value check
         if self.data.has_key('z') and not type(self.data.get('z'))==type(1):
-             raise TypeError, 'number of teeth not integer'
+             raise(TypeError, 'number of teeth not integer')
 
         # calculate pitch diameter if not supplied
         if not self.data.has_key('d'):
              self.data.update({'d':self.tool.data.get('m')*self.data.get('z')/    \
                                cos(radians(self.data.get('beta')))})
 
-        # helix angle: set to default if not supplied   
+        # helix angle: set to default if not supplied
         if not self.data.has_key('beta'):
              self.data.update({'beta':self._beta_default})
 
-        # addendum modification factor: set to default if not supplied   
+        # addendum modification factor: set to default if not supplied
         if not self.data.has_key('x'):
              self.data.update({'x':self._x_default})
 
-        # tooth thickness allowance: set to default if not supplied   
+        # tooth thickness allowance: set to default if not supplied
         if not self.data.has_key('A_s'):
              self.data.update({'A_s':self._A_s_default})
         # tooth thickness allowance: value check
         else:
              if not self.data.get('A_s')<=0:
-                  raise ValueError, 'tooth thickness allowance positive'
+                  raise(ValueError, 'tooth thickness allowance positive')
 
-        # machining allowance: set to default if not supplied   
+        # machining allowance: set to default if not supplied
         if not self.data.has_key('q'):
              self.data.update({'q':self._q_default})
 
@@ -2845,13 +2862,13 @@ class GearHobber(Machine):
         parameter:  curve parameter (numeric)
         difforder:  differentiate difforder times with respect to curve parameter (0, 1, or 2)
                     optional - set to 0 if not supplied
-     
+
         OUTPUT:
         tool_property:    the requested property of the profile (numeric, 2x1-NumPy-array)
         """
 
         if difforder==0:
-            
+
             # point on flank for supplied curve parameter in  normal cross-section
             P     = self.tool.getCurvePoint(parameter, 0)
 
@@ -2861,7 +2878,7 @@ class GearHobber(Machine):
             return P_t
 
         elif difforder==1:
-            
+
             # tangent vector for supplied curve parameter
             dP_ds = self.tool.getCurvePoint(parameter, 1)
 
@@ -2871,7 +2888,7 @@ class GearHobber(Machine):
             return dP_ds_t
 
         elif difforder==2:
-            
+
             # second derivative of curve for supplied curve parameter
             d2P_ds2 = self.tool.getCurvePoint(parameter, 2)
 
@@ -2881,18 +2898,18 @@ class GearHobber(Machine):
             return d2P_ds2_t
 
         else:
-            raise AttributeError, 'differentiation order must be 0, 1, or 2'
+            raise(AttributeError, 'differentiation order must be 0, 1, or 2')
 
 
     def _getToolY(self, X):
         """
 
         INPUT parameter:
-     
+
         OUTPUT:
         Y:
         """
-        
+
         # y-value of point on flank for supplied curve parameter in  normal cross-section
         y     = self.tool.getY(X*cos(radians(self.data.get('beta'))))
 
@@ -2913,7 +2930,7 @@ class GearHobber(Machine):
         elemtype:   indicator for the type of element to transform (string)
                     'point' :    transform a point, i.e. rotation and translation is applied (default)
                     'vector':    transform a vector, i.e. rotation only is applied
-     
+
         OUTPUT:
         transelem:  point or vector in workpiece coordinate system (2x1-NumPy-array)
         """
@@ -2926,18 +2943,18 @@ class GearHobber(Machine):
 
         # rotation matrix from rack cutter to gear coordinate system
         L = array([[cos(phi), sin(phi)], [-sin(phi), cos(phi)]])
-        
+
         # translation vector from rack cutter to gear coordinate system
         r = rho*array([sin(phi)-phi*cos(phi), cos(phi)+phi*sin(phi)])
-       
+
         # point in workpiece coordinate system
         if elemtype=='point':
              return dot(L, element)+r
         # vector in workpiece coordinate system
         elif elemtype=='vector':
-             return dot(L, element)            
+             return dot(L, element)
         else:
-             raise AttributeError, 'unknown option for element type'
+             raise(AttributeError, 'unknown option for element type')
 
 
     def _transformToToolCoords(self, phi, element, elemtype='point'):
@@ -2951,7 +2968,7 @@ class GearHobber(Machine):
         elemtype:   indicator for the type of element to transform (string)
                     'point' :    transform a point, i.e. rotation and translation is applied (default)
                     'vector':    transform a vector, i.e. rotation only is applied
-     
+
         OUTPUT:
         transelem:  point or vector in tool coordinate system (2x1-NumPy-array)
         """
@@ -2964,18 +2981,18 @@ class GearHobber(Machine):
 
         # rotation matrix from gear to rack cutter coordinate system
         L = array([[cos(phi), -sin(phi)], [sin(phi), cos(phi)]])
-        
+
         # translation vector from rack cutter to gear coordinate system
         r = -rho*array([sin(phi)-phi*cos(phi), cos(phi)+phi*sin(phi)])
-       
+
         # point in tool coordinate system
         if elemtype=='point':
              return dot(L, element+r)
         # vector in tool coordinate system
         elif elemtype=='vector':
-             return dot(L, element)            
+             return dot(L, element)
         else:
-             raise AttributeError, 'unknown option for element type'
+             raise(AttributeError, 'unknown option for element type')
 
 
     def _getVelocityVector(self, phi, parameter):
@@ -2986,7 +3003,7 @@ class GearHobber(Machine):
         INPUT parameter:
         phi:        actual position parameter (angle) of cutter (numeric) [radians]
         parameter:  curve parameter (numeric)
-     
+
         OUTPUT:
         v:          relative velocity vector (numeric, 2x1-NumPy-array)
         """
@@ -2996,12 +3013,12 @@ class GearHobber(Machine):
 
         # tool point in transverse cross-section coordinate system
         P_t = self._getToolPoint(parameter, 0)
-        
+
         # relative velocity vector
         v = array([P_t[1], rho*phi-P_t[0]])
 
         return v
-        
+
 
     def _getNormalVector(self, parameter, difforder=0):
         """
@@ -3012,7 +3029,7 @@ class GearHobber(Machine):
         parameter:  curve parameter (numeric)
         difforder:  differentiate difforder times with respect to curve parameter (0 or 1)
                     optional - set to 0 if not supplied
-     
+
         OUTPUT:
         N:          the requested vector, normal vector or its first derivative (numeric, 2x1-NumPy-array)
         """
@@ -3025,13 +3042,13 @@ class GearHobber(Machine):
 
         # normal vector on tool flank in transverse cross-section
         N = dot(orthog, dnP_dsn_t)
-            
+
         if difforder==0 or difforder==1:
             return N
         else:
-            raise AttributeError, 'differentiation order must be 0 or 1'
-        
-    
+            raise(AttributeError, 'differentiation order must be 0 or 1')
+
+
     def _FlankPointObjectiveFnc(self, phi, parameter):
         """
         Find rotation angle (phi) of tool for which the point with parameter s on tool is possibly a
@@ -3045,7 +3062,7 @@ class GearHobber(Machine):
         INPUT parameter:
         phi:          actual position parameter (angle) of cutter (numeric) [radians]
         parameter:    actual curve parameter of tool (numeric)
-     
+
         OUTPUT:
         p: condition value (numeric)
         """
@@ -3053,7 +3070,7 @@ class GearHobber(Machine):
         # normal vector on flank and relative velocity vector
         N = self._getNormalVector(parameter, 0)
         v = self._getVelocityVector(phi, parameter)
-        
+
         # objective function (normal vector on tool surface is perpendicular to relative velocity vector)
         # caution: this condition is necessary but not sufficient, post-processing required
         p = dot(N,v)
@@ -3076,7 +3093,7 @@ class GearHobber(Machine):
         INPUT parameter:
         phi:        actual position parameter (angle) of cutter (numeric) [radians]
         point:      point to be tested represented in workpiece coordinate system (2x1-NumPy-array)
-     
+
         OUTPUT:
         d:          relative distance of point from reference point (numeric)
         """
@@ -3086,9 +3103,9 @@ class GearHobber(Machine):
 
         # distance of point from tool in y-direction
         d = self._getToolY(point_tool[0])-point_tool[1]
-        
+
         return d
-      
+
 
 
     def _findFlankPoint(self, parameter):
@@ -3098,7 +3115,7 @@ class GearHobber(Machine):
 
         INPUT parameter:
         parameter:    actual curve parameter of tool (numeric)
-     
+
         OUTPUT:
         P_c:      possible workpiece point in machine coordinate system (2x1-NumPy-array)
         phi_opt:  cutter angle at which condition compliant (numeric)[radians]
@@ -3115,12 +3132,12 @@ class GearHobber(Machine):
 
         return P_c, phi_opt
 
-        
+
     def _checkEnvelope(self, point, no_supp_pnts=None):
         """
         Check if a point is member of the envelope of the family of curves defined by
         the tool surface that is transformed to the workpiece coordinate system and
-        the necessary condition for envelope points (check sufficient condition). 
+        the necessary condition for envelope points (check sufficient condition).
         The strategy is to observe the point while the tool cuts through the workpiece.
         A measure for the point's distance from the tool surface is introduced. A negative
         sign of the measure indicates that the point is interior to the tool's contour.
@@ -3149,7 +3166,7 @@ class GearHobber(Machine):
                        distance function. Accuracy and computational effort increase for
                        larger values (integer)
                        optional - set to self._no_supp_pnts_default if not supplied
-     
+
         OUTPUT:
         condition:  True if point is envelope point, false otherwise (boolean)
         """
@@ -3157,7 +3174,7 @@ class GearHobber(Machine):
         # set number of support points to default if not supplied
         if no_supp_pnts==None:
              no_supp_pnts = self._no_supp_pnts_default
-             
+
         # calculate range in that negative distances must be searched (outside of that range the tool is certainly
         # completely above tip circle of gear and thus cannot cut this tooth of workpiece any more)
         phi_lim = self._getEffectivePhiMax()
@@ -3197,7 +3214,7 @@ class GearHobber(Machine):
         the bounding-box touches the tip circle of the generated gear so that the complete box is
         outside the tip circle, contact between the corresponding cutter tooth and the workpiece
         cannot occur in the further manufacturing process.
-     
+
         OUTPUT:
         phi_lim:        maximum positive workpiece rotation angle that might affect generated
                         gear shape (numeric)
@@ -3211,7 +3228,7 @@ class GearHobber(Machine):
         phi_lim = s_lim/self.data.get('d')*2.0
 
         return phi_lim
-            
+
 
     def _findLimitingPoint(self, param_env_false, param_env_true):
         """
@@ -3227,7 +3244,7 @@ class GearHobber(Machine):
                              sufficient condition evaluates to false (numeric)
         param_env_true:      tool curve parameter on that side of the singular parameter where the
                              sufficient condition evaluates to true (numeric)
-     
+
         OUTPUT:
         P_true:              singular point in workpiece coordinate system (1x2-NumPy-array)
         """
@@ -3257,7 +3274,7 @@ class GearHobber(Machine):
         P_true, phi_true = self._findFlankPoint(param_env_true)
 
         return P_true
-    
+
 
     def _subtractFromBlank(self, first_array, second_array):
         """
@@ -3270,7 +3287,7 @@ class GearHobber(Machine):
                          must contain point with x=0.0 as last column!
         second_array:    points on second curve (Mx2-NumPy-array)
                          must contain point with x=0.0 as last column!
-     
+
         OUTPUT:
         envelope:        inner envelope of the two input arrays (Kx2-NumPy-array)
         """
@@ -3281,16 +3298,16 @@ class GearHobber(Machine):
 
         # check if both input arrays are valid
         if not size(first_array, 0)>1:
-             raise ValueError, 'first input array contains insufficient number of points'
+             raise(ValueError, 'first input array contains insufficient number of points')
         if not size(second_array, 0)>1:
-             raise ValueError, 'second input array contains insufficient number of points'
+             raise(ValueError, 'second input array contains insufficient number of points')
         if not size(first_array, 1)==2:
-             raise ValueError, 'first input array dimension error'
+             raise(ValueError, 'first input array dimension error')
         if not size(second_array, 1)==2:
-             raise ValueError, 'second input array dimension error'
+             raise(ValueError, 'second input array dimension error')
 
         # convert both input arrays (in reverse row order) to polar coordinates
-        first_array_polar = self._removeTrailingZeros(first_array[::-1,:])  
+        first_array_polar = self._removeTrailingZeros(first_array[::-1,:])
         if self.data.get('z')<0.0:     # necessary to handle internal gears correctly
              first_array_polar = first_array_polar[::-1,:]
         for index in range(0, size(first_array_polar, 0)):
@@ -3303,7 +3320,7 @@ class GearHobber(Machine):
              [r, phi] = CartesianCoordinatesToPolarCoordinates(second_array_polar[index, 0], second_array_polar[index, 1])
              second_array_polar[index, 0] = sign(self.data.get('z'))*r
              second_array_polar[index, 1] = phi
-             
+
         # linear interpolation functions for arrays in polar coordinates
         first_array_polar_interp = append(append(array([[first_array_polar[0,0], -1.0E99]]), first_array_polar, axis=0),  \
                                           array([[first_array_polar[-1,0], 1.0E99]]),axis=0)
@@ -3311,7 +3328,7 @@ class GearHobber(Machine):
         second_array_polar_interp = append(append(array([[second_array_polar[0,0], -1.0E99]]), second_array_polar, axis=0),  \
                                            array([[second_array_polar[-1,0], 1.0E99]]),axis=0)
         second_array_interpolation = interp1d(second_array_polar_interp[:,1], second_array_polar_interp[:,0])
-        
+
         # radial distance between curves
         def radial_distance(phi):
              return first_array_interpolation(phi)-second_array_interpolation(phi)
@@ -3349,9 +3366,9 @@ class GearHobber(Machine):
         for index in range(0, size(polar_envelope, 0)):
              [x, y] = PolarCoordinatesToCartesianCoordinates(polar_envelope[index,0], polar_envelope[index,1])
              cartesian_envelope[index+(sign(self.data.get('z'))+1)/2,:] = array([x, y])*sign(self.data.get('z'))
-             
+
         return cartesian_envelope
-    
+
 
     def _removeTrailingZeros(self, inmatrix):
         """
@@ -3359,7 +3376,7 @@ class GearHobber(Machine):
 
         INPUT parameter:
         inmatrix:       matrix containing of 2d-column-vectors (Nx2-NumPy-array)
-     
+
         OUTPUT:
         outmatrix:      matrix containing of 2d-column-vectors, trailing zero-columns removed (Mx2-NumPy-array)
         """
@@ -3378,8 +3395,8 @@ class GearHobber(Machine):
         outmatrix = transpose(array([out_x, out_y]))
 
         return outmatrix
-    
-    
+
+
     def createToothShape(self, number_of_points=None):
         """
         Calculate the generated tooth shape. A manufacturing (hobbing) simulation is run.
@@ -3389,7 +3406,7 @@ class GearHobber(Machine):
         INPUT parameter:
         number_of_points:  number of points for tool discretization in individual sections (list of positive integers)
                            optional - set to default if not supplied
-     
+
         OUTPUT:
         formcoords:   profile of half a tooth of generated gear in machine coordinate
                       system (Nx2-NumPy-array)
@@ -3400,20 +3417,20 @@ class GearHobber(Machine):
         from time import time
 
         # some user-output
-        print '\nrunning manufacturing simulation'
+        print('\nrunning manufacturing simulation')
         t0 = time()
 
         # number of points value check
         if number_of_points:
              if not type(number_of_points)==type([]):
-                  raise TypeError, 'list expected'
+                  raise(TypeError, 'list expected')
              if not min(number_of_points)>1:     # having just two points is completely useless, but it's the users responsibility to do something useful with the software
-                  raise ValueError, 'all number of points must be greater than one'
+                  raise(ValueError, 'all number of points must be greater than one')
              if not map(type,number_of_points)==map(type,[1.0]*len(number_of_points)):
-                  raise TypeError, 'number of points not integer'
+                  raise(TypeError, 'number of points not integer')
         else:       # set to default if not supplied
              number_of_points = self._no_pnts_default
-        
+
         # vector of tool parameters used for manufacturing simulation
         tool_params = []
         char_params = [self.tool._s_P_1, self.tool._s_P_2, self.tool._s_P_3, self.tool._s_P_4, self.tool._s_P_5, self.tool._s_P_6, self.tool._s_P_7]
@@ -3434,7 +3451,7 @@ class GearHobber(Machine):
         gear_point_index = 0
 
         # get points that are compatible with necessary condition of existence of envelope
-        for candidate_param in tool_params:  
+        for candidate_param in tool_params:
              P_c, phi_c = self._findFlankPoint(candidate_param)
              gap[gear_point_index,:] = P_c
              phi[gear_point_index]   = phi_c
@@ -3460,7 +3477,7 @@ class GearHobber(Machine):
              if gap[gap_index, 0]>=0.0:                         # consider only flank points of half tooth
                  if self._checkEnvelope(gap[gap_index]):        # check if point is really on envelope of family of curves (sufficient condition)
                      if mod(gap_index, round(size(gap, 0)/40.0))==0:    # more user-output (kind of a progress-bar)
-                          print '.',
+                          print('.')
                      pnt_transformed = dot(R, gap[gap_index,:])         # rotate coordinates --> symmetry-line of tooth is vertical y-axis
                      if pnt_transformed[0]<=0.0:                        # exclude points on other side of symmetry-line (tooth shape is represented by half-tooth only)
                           half_tooth[formcoords_index,:] = pnt_transformed  # add point to array
@@ -3469,21 +3486,21 @@ class GearHobber(Machine):
                      if not envelope_point and gap_index>0:             # undercutting occurs (singular point) if two consecutive points that comply to necessesary condition for envelope points behave different regarding sufficient condition
                           param_env_false = tool_params[gap_index-1]    # store tool curve parameter of the first of two consecutive points where one does not and the next does comply to the sufficient envelope condition
                           param_env_true  = tool_params[gap_index]      # store tool curve parameter of the second of two consecutive points where one does not and the next does comply to the sufficient envelope condition
-                     envelope_point = True                              # the current point complies to necessary and sufficient envelope condition 
+                     envelope_point = True                              # the current point complies to necessary and sufficient envelope condition
                  else:
-                     envelope_point = False                             # the current point complies to necessary but not to sufficient envelope condition 
+                     envelope_point = False                             # the current point complies to necessary but not to sufficient envelope condition
                  if not param_env_true==None:       # if parameter to be passed to singular point computation method is set then call it
                      singular_point  = self._findLimitingPoint(param_env_false, param_env_true)   # get singular point in gear coordinate system
                      pnt_transformed = dot(R, singular_point)                                     # rotate coordinates --> symmetry-line of tooth is vertical y-axis
                      if pnt_transformed[0]<=0.0 and not (abs(half_tooth-pnt_transformed)<self._zero_tolerance_default).all(1).any():        # exclude points on wrong side of symmetry-line (tooth shape is represented by half-tooth only) and make sure that only unique points are added to result
                           half_tooth[formcoords_index,:]   = half_tooth[formcoords_index-1,:]   # copy point before current position to current position
                           half_tooth[formcoords_index-1,:] = pnt_transformed                    # add point to array at position before current position (correct edge-point position)
-                          formcoords_index += 1                                                 # increment array index                 
+                          formcoords_index += 1                                                 # increment array index
                      param_env_true     = None                                      # reset parameter passed to singular point computation method for which the corresponding flank point evaluates to true in the sufficient envelope condition check
-        
+
         # add border point on addendum circle if necessary
         if abs(half_tooth[formcoords_index-1,0])>self._zero_tolerance_default*self.tool.data.get('m'):
-            
+
              def objective(p, x):
                  """
                  Compute LHS of necessary enveloping condition and distance from target-value in x-direction.
@@ -3529,9 +3546,9 @@ class GearHobber(Machine):
         formcoords = NumPyArrayToPythonOCCArray(half_tooth_final)
 
         # some more user-output
-        print '\nmanufacturing simulation finished.'
-        print 'time elapsed: ', time()-t0, ' s'
-        
+        print('\nmanufacturing simulation finished.')
+        print('time elapsed: ', time()-t0, ' s')
+
         return formcoords, geardata
 
 
@@ -3551,7 +3568,7 @@ class Blank:
                          # (TColgp_Array1OfPnt2d, pythonOCC)
 
     # Attributes: default settings for parameters
-    _blank_points_default  = 1000   # default value for number of points used to create blank 
+    _blank_points_default  = 1000   # default value for number of points used to create blank
 
 
     def __str__(self):
@@ -3564,7 +3581,7 @@ class Blank:
         OUTPUT:
         string representation of class
         """
-        
+
         outstr = 'blank coordinates:\n'
 
         # output blank coordinates
@@ -3579,7 +3596,7 @@ class Blank:
         return outstr
 
 
-    
+
     def setBlankCoords(self, blankcoords):
         """
         Set blank coordinates
@@ -3587,13 +3604,13 @@ class Blank:
         INPUT parameters:
         blankcoords : list of 2d-coordinate points (TColgp_Array1OfPnt2d, pythonOCC)
         """
-        
+
         # blank coordinates: type and value check (at least two points for defining a
         # tooth form (straight flanks) and two coordinates per point)
         if not isinstance(blankcoords, TColgp_Array1OfPnt2d):
-             raise TypeError, 'instance of TColgp_Array1OfPnt2d expected'
+             raise(TypeError, 'instance of TColgp_Array1OfPnt2d expected')
         if formcoords.Length()<2:
-             raise TypeError, 'too few points for blank'
+             raise(TypeError, 'too few points for blank')
 
         self.blankcoords = blankcoords
 
@@ -3611,7 +3628,7 @@ class Blank:
 
         return self.blankcoords
 
-     
+
     def __init__(self, blankcoords=None):
         """
         Initialization of Blank-object
@@ -3648,7 +3665,7 @@ class Blank:
              angle = -(point_index-1)/(no_of_points-1)*(max_angle-min_angle)+max_angle
              self.blankcoords.SetValue(point_index, gp_Pnt2d(diameter/2*cos(angle), diameter/2*sin(angle)))
 
-             
+
 
 
 """ Planned extensions """
