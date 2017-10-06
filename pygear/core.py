@@ -756,7 +756,7 @@ class CylindricalGearWheel(GearWheel):
 
         # for finding form diameters, it is checked if the points are part of the flank involute
         # the limiting points of the flank involute define the form diameters
-        if self.data.has_key('alpha_n') and self.data.has_key('alpha_t') and self.data.has_key('x_E'):
+        if 'alpha_n' in self.data and 'alpha_t' in self.data and 'x_E' in self.data:
              tol = self._tol_default*self.data.get('m_n')    # tolerance for comparisons
              point_on_flank = False
              first_limit_diameter = None
@@ -781,9 +781,9 @@ class CylindricalGearWheel(GearWheel):
              else:
                   d_Fa = second_limit_diameter
                   d_Ff = first_limit_diameter
-             if self.data.has_key('d_Ff'):          # use user-parameter if supplied
+             if 'd_Ff' in self.data:          # use user-parameter if supplied
                   d_Ff = self.data.get('d_Ff')
-             if self.data.has_key('d_Fa'):
+             if 'd_Fa' in self.data:
                   d_Ff = self.data.get('d_Fa')
              return {'d_f':d_f, 'd_a':d_a, 'd_Ff':d_Ff, 'd_Fa':d_Fa, 'z':z}
 
@@ -866,29 +866,29 @@ class CylindricalGearWheel(GearWheel):
              self.data.update(self._analyzeFormcoords())
 
         # number of teeth: value check
-        if self.data.has_key('z') and not type(self.data.get('z'))==type(1):
+        if 'z' in self.data and not type(self.data.get('z'))==type(1):
              raise(TypeError, 'number of teeth not integer')
 
         # module: value check
-        if self.data.has_key('m_n') and not self.data.get('m_n')>=0:
+        if 'm_n' in self.data and not self.data.get('m_n')>=0:
              raise(ValueError, 'module non-positive')
 
         # helix angle: set to default if not supplied
-        if not self.data.has_key('beta'):
+        if 'beta' not in self.data:
              self.data.update({'beta':self._beta_default})
 
         # calculate remaining parameter from number of teeth, module and pitch
         # diameter if only two of three are supplied (error if less are supplied)
-        if self.data.has_key('tau') and not self.data.has_key('z'):
+        if 'tau' in self.data and 'z' not in self.data:
              self.data.update({'z':int(2*pi/self.data.get('tau'))})
-        if self.data.has_key('z') and self.data.has_key('m_n'):
+        if 'z' in self.data and 'm_n' in self.data:
              self.data.update({'d':self.data.get('m_n')*self.data.get('z')/  \
                                cos(radians(self.data.get('beta')))})
-        elif self.data.has_key('z') and self.data.has_key('d'):
+        elif 'z' in self.data and 'd' in self.data:
              self.data.update({'m_n':self.data.get('d')*  \
                                cos(radians(self.data.get('beta')))/  \
                                self.data.get('z')})
-        elif self.data.has_key('m_n') and self.data.has_key('d'):
+        elif 'm_n' in self.data and 'd' in self.data:
              self.data.update({'z':int(self.data.get('d')*  \
                                cos(radians(self.data.get('beta')))/  \
                                self.data.get('m_n'))})
@@ -896,13 +896,13 @@ class CylindricalGearWheel(GearWheel):
              raise(AttributeError, 'insufficient data supplied')
 
         # calculate transverse pitch angle
-        if not self.data.has_key('tau'):
+        if 'tau' not in self.data:
              self.data.update({'tau':degrees(2*pi/self.data.get('z'))})
 
         # indicator if gear is external (number of teeth positive) or internal
         isexternal = sign(self.data.get('z'))
         # pitch diameter: value check (same sign as number of teeth)
-        if not sign(self.data.get('d'))==isexternal:
+        if not sign(self.data.get('d')) == isexternal:
              raise(ValueError, 'sign of pitch diameter')
 
         # calculate module in transverse cross-section
@@ -910,24 +910,24 @@ class CylindricalGearWheel(GearWheel):
                           self.data.get('beta')))})
 
         # tooth width: check for existence and value check
-        if not self.data.has_key('b'):
+        if 'b' not in self.data:
              raise(AttributeError, 'tooth width not supplied')
         if not self.data.get('b')>=0:
              raise(ValueError, 'tooth width non-positive')
 
         # pressure angle: value check, set to default if not supplied
-        if self.data.has_key('alpha_n'):
+        if 'alpha_n' in self.data:
              if self.data.get('alpha_n')<0:
                   raise(ValueError, 'pitch angle non-positive')
         else:
              self.data.update({'alpha_n':self._alpha_n_default})
 
         # addendum modification factor: set to default if not supplied
-        if not self.data.has_key('x'):
+        if 'x' not in self.data:
              self.data.update({'x':self._x_default})
 
         # tooth thickness allowance: set to default if not supplied
-        if not self.data.has_key('A_s'):
+        if 'A_s' not in self.data:
              self.data.update({'A_s':self._A_s_default})
         # tooth thickness allowance: value check
         else:
@@ -943,7 +943,7 @@ class CylindricalGearWheel(GearWheel):
 
         # service pitch diameter: value check
         # calculate service pressure angle from service pitch diameter if not supplied
-        if self.data.has_key('d_w') and not self.data.has_key('alpha_wt'):
+        if 'd_w' in self.data and 'alpha_wt' not in self.data:
              if not sign(self.data.get('d_w'))==isexternal:
                   raise(ValueError, 'sign of service pitch diameter')
              self.data.update({'alpha_wt':degrees(acos(self.data.get('d')/  \
@@ -951,7 +951,7 @@ class CylindricalGearWheel(GearWheel):
                                self.data.get('alpha_t')))))})
 
         # service pitch diameter: calculate from service pressure angle if possible
-        if self.data.has_key('alpha_wt') and not self.data.has_key('d_w'):
+        if 'alpha_wt' in self.data and 'd_w' not in self.data:
              self.data.update({'d_w':self.data.get('d')*  \
                                cos(radians(self.data.get('alpha_t')))/  \
                                cos(radians(self.data.get('alpha_wt')))})
@@ -966,7 +966,7 @@ class CylindricalGearWheel(GearWheel):
 
         if not formcoords:
              # tip clearance: value check, set to default if not supplied
-             if self.data.has_key('c'):
+             if 'c' in self.data:
                   if self.data.get('c')<0.1*self.data.get('m_n') or  \
                      self.data.get('c')>0.3*self.data.get('m_n'):
                        raise(ValueError, 'tip clearance out of bounds')
@@ -974,7 +974,7 @@ class CylindricalGearWheel(GearWheel):
                   self.data.update({'c':self._c_default*self.data.get('m_n')})
 
              # fillet radius: value check, set to default if not supplied
-             if not self.data.has_key('rho_f'):
+             if 'rho_f' not in self.data:
                   self.data.update({'rho_f':self._rho_f_default*self.data.get('m_n')})
              else:
                   if self.data.get('rho_f')<0:
@@ -982,7 +982,7 @@ class CylindricalGearWheel(GearWheel):
 
              # CAUTION: THE FOLLOWING SECTION OF CODE WILL BE REMOVED IN FUTURE RELEASES!
              # tool fillet radius: value check
-             if self.data.has_key('rho_fP'):
+             if 'rho_fP' in self.data:
                   if self.data.get('rho_fP')<0:
                        raise(ValueError, 'tool fillet radius negative')
                   if not self.data.get('beta')==0:
@@ -991,8 +991,8 @@ class CylindricalGearWheel(GearWheel):
 
              # calculate tip height modification factor if possible (else set to default)
              # various attempts are made
-             if self.data.has_key('a'):
-                  if self.data.has_key('alpha_wt') and not self.data.has_key('z_2'):
+             if 'a' in self.data:
+                  if 'alpha_wt' in self.data and 'z_2' not in self.data:
                        if self.data.get('alpha_wt')<0:
                             raise(ValueError, 'service pressure angle non-positive')
                        self.data.update({'a_d':self.data.get('a')*cos(radians(   \
@@ -1001,7 +1001,7 @@ class CylindricalGearWheel(GearWheel):
                        self.data.update({'z_2':int(self.data.get('a_d')*2/self.data.get(  \
                                          'm_t')-self.data.get('z'))})
 
-                  elif self.data.has_key('z_2') and not self.data.has_key('alpha_wt'):
+                  elif 'z_2' in self.data and 'alpha_wt' not in self.data:
                        if not type(self.data.get('z_2'))==type(1):
                             raise(TypeError, 'number of teeth of counter gear not integer')
                        if self.data.get('z')<0 and self.data.get('z_2')<0:
@@ -1011,7 +1011,7 @@ class CylindricalGearWheel(GearWheel):
                        self.data.update({'alpha_wt':degrees(acos(self.data.get('a_d')/  \
                                         self.data.get('a')*cos(radians(self.data.get(  \
                                         'alpha_t')))))})
-                  if self.data.has_key('alpha_wt') and self.data.has_key('z_2'):
+                  if 'alpha_wt' in self.data and 'z_2' in self.data:
                        x_2 = (inv(self.data.get('alpha_wt'))-inv(self.data.get('alpha_t')))*  \
                              (self.data.get('z')+self.data.get('z_2'))/2/tan(radians(  \
                              self.data.get('alpha_n')))-self.data.get('x')
@@ -1023,7 +1023,7 @@ class CylindricalGearWheel(GearWheel):
                   self.data.update({'k':self._k_default})
 
              # root circle diameter: value check, calculate if not supplied
-             if self.data.has_key('d_f'):
+             if 'd_f' in self.data:
                   if self.data.get('d_f')>self.data.get('d'):
                        raise(ValueError, 'root circle diameter greater than pitch diameter')
                   if not sign(self.data.get('d_f'))==isexternal:
@@ -1034,7 +1034,7 @@ class CylindricalGearWheel(GearWheel):
                                     self.data.get('c'))})
 
              # tip diameter: value check, calculate if not supplied
-             if self.data.has_key('d_a'):
+             if 'd_a' in self.data:
                  #if self.data.get('d_a')<self.data.get('d'):
                      #raise(ValueError, 'tip diameter less than pitch diameter'
                  if not sign(self.data.get('d_a'))==isexternal:
@@ -1046,17 +1046,17 @@ class CylindricalGearWheel(GearWheel):
 
              # radial value of tip chamfer: value check, calculate or set to default
              # if not supplied
-             if self.data.has_key('h_k'):
+             if 'h_k' in self.data:
                   if self.data.get('h_k')<0:
                        raise(ValueError, 'value of tip chamfer negative')
-             elif self.data.has_key('d_Fa'):
+             elif 'd_Fa' in self.data:
                   self.data.update({'h_k':abs(self.data.get('d_a')-self.data.get('d_Fa'))/2})
              else:
                   self.data.update({'h_k':self._h_k_default})
 
              # remaining tooth thickness: value check, set to default if not supplied
              s_a, d_ac = self._toothThickness(self.data.get('d_a'))
-             if not self.data.has_key('s_aK'):
+             if 's_aK' not in self.data:
                   self.data.update({'s_aK':s_a-2*self.data.get('h_k')})
              if self.data.get('s_aK')<0:
                   raise(ValueError, 'remaining tooth thickness at tip negative')
@@ -1065,7 +1065,7 @@ class CylindricalGearWheel(GearWheel):
 
 
              # root form diameter: value check
-             if self.data.has_key('d_Ff'):
+             if 'd_Ff' in self.data:
                   if self.data.get('d_Ff')>self.data.get('d'):
                        raise(ValueError, 'root form diameter greater than pitch diameter')
                   if self.data.get('d_Ff')<self.data.get('d_f'):
@@ -1074,7 +1074,7 @@ class CylindricalGearWheel(GearWheel):
                        raise(ValueError, 'sign of root form diameter')
 
              # tip form diameter: value check
-             if self.data.has_key('d_Fa'):
+             if 'd_Fa' in self.data:
                   if self.data.get('d_Fa')<self.data.get('d'):
                        raise(ValueError, 'tip form diameter less than pitch diameter')
                   if self.data.get('d_Fa')>self.data.get('d_a'):
@@ -1085,7 +1085,7 @@ class CylindricalGearWheel(GearWheel):
                   self.data.update({'d_Fa':self.data.get('d_a')-2*self.data.get('h_k')})
 
         # shaft diameter: set to default if not supplied
-        if not self.data.has_key('d_s'):
+        if 'd_s' not in self.data:
              self.data.update({'d_s':self._d_s_default})
         if abs(self.data.get('d_s'))>self._tol_default:
              if not sign(self.data.get('d_s'))==isexternal:
@@ -1104,11 +1104,11 @@ class CylindricalGearWheel(GearWheel):
              self._makeFormWire()
 
         # cleanup temporary data (should not be attribute of single gearwheel)
-        if self.data.has_key('z_2'):
+        if 'z_2' in self.data:
              self.data.pop('z_2')
-        if self.data.has_key('a'):
+        if 'a' in self.data:
              self.data.pop('a')
-        if self.data.has_key('a_d'):
+        if 'a_d' in self.data:
              self.data.pop('a_d')
 
 
@@ -1263,7 +1263,7 @@ class CylindricalGearWheel(GearWheel):
         # determine how the root shape is defined and calculate significant points
         # root shape is circular in transverse cross-section
         if isexternal>0:        # for external gears
-            if not self.data.has_key('d_Ff'):
+            if 'd_Ff' not in self.data:
                 # root circle is tangent to involute
                 if (self.data.get('d_f')**2+4*self.data.get('rho_f')*self.data.get('d_f') >= self.data.get('d_b')**2):
                     self.data.update({'d_Ff': isexternal*sqrt((sqrt((self.data.get('d_f')+2*self.data.get('rho_f'))**2-  \
@@ -1300,7 +1300,7 @@ class CylindricalGearWheel(GearWheel):
                     inv_extension = True
 
         else:       # for internal gears
-            if not self.data.has_key('d_Ff'):
+            if 'd_Ff' not in self.data:
                 # root circle is tangent to involute
                 t_b = sqrt((self.data.get('d_f')/2+self.data.get('rho_f'))**2-(self.data.get('d_b')/2)**2)
                 self.data.update({'d_Ff': -2*sqrt((t_b+self.data.get('rho_f'))**2+(self.data.get('d_b')/2)**2)})
@@ -1385,7 +1385,7 @@ class CylindricalGearWheel(GearWheel):
             n += 1
 
         # compute points on tip chamfer
-        if self.data.has_key('h_k') and (self.data.get('h_k') > 0):
+        if 'h_k' in self.data and (self.data.get('h_k') > 0):
             print('Warning: straight tip chamfer assumed!')
             delta_k = 1/(self.points_chamfer-1)
             n = 0
@@ -1833,7 +1833,7 @@ class CylindricalGearPair(GearPair):
         """
 
         # value check: addendum must be supplied
-        if not pairdata.has_key('a'):
+        if 'a' not in pairdata:
              raise(AttributeError, 'centre distance not found')
 
         GearPair.__init__(self, pairdata, Pinion, Gear)
@@ -1851,7 +1851,7 @@ class CylindricalGearPair(GearPair):
                       raise(ValueError, 'helix angles of gear and pinion not compatible')
 
              # warning, because addendum will be set for GearWheel-objects
-             if self.Pinion.data.has_key('a') or self.Gear.data.has_key('a'):
+             if 'a' in self.Pinion.data or 'a' in self.Gear.data:
                   warn('addendum will be overwritten', UserWarning)
 
              # calculate and set gear pair parameters
@@ -1932,7 +1932,7 @@ class CylindricalGearPair(GearPair):
              self.data.update({'i':-self.Pinion.data.get('z')/self.Gear.data.get('z')})
 
              # centre distance allowance: set to default if not supplied
-             if not self.data.has_key('A_a'):
+             if 'A_a' not in self.data:
                   self.data.update({'A_a':self._A_a_default})
 
              # acceptance backlash (DIN 3967)
@@ -2137,79 +2137,79 @@ class ToothedRackTool(Tool):
         self.data = deepcopy(tooldata)
 
         # module must be supplied
-        if not self.data.has_key('m'):
+        if 'm' not in self.data:
              raise(AttributeError, 'no module supplied')
         # module value check
         if self.data.get('m')<=0:
              raise(ValueError, 'non-positive module')
 
         # set pressure angle to default if not supplied
-        if not self.data.has_key('alpha_P0'):
+        if 'alpha_P0' not in self.data:
              self.data.update({'alpha_P0':self._alpha_P0_default})
         # pressure angle value check
         if self.data.get('alpha_P0')<=0:
              raise(ValueError, 'non-positive pressure angle')
 
         # set type of tool
-        if self.data.has_key('alpha_KP0'):
+        if 'alpha_KP0' in self.data:
              self._root_type = 'chamfered'
         else:
              self._root_type = 'circular'
 
-        if self.data.has_key('pr_P0') and self.data.get('pr_P0')>0:
+        if 'pr_P0' in self.data and self.data.get('pr_P0')>0:
              self._tip_type = 'protuberance'
         else:
              self._tip_type = 'standard'
 
         # calculate tip parameters with form addendum if supplied (for tool without protuberance)
-        if self._tip_type=='standard' and self.data.has_key('h_FaP0'):
-             if self.data.has_key('h_aP0'):
+        if self._tip_type=='standard' and 'h_FaP0' in self.data:
+             if 'h_aP0' in self.data:
                   rho_aP0 = (self.data.get('h_aP0')-self.data.get('h_FaP0'))/    \
                             (1.0-cos(radians(self.data.get('alpha_P0'))))
                   # crest rounding radius value and consistency check
-                  if self.data.has_key('rho_aP0'):
+                  if 'rho_aP0' in self.data:
                        if not self.data.get('rho_aP0')==rho_aP0:
                             raise(ValueError, 'tip definition inconsistent')
                   else:
                        self.data.update({'rho_aP0':rho_aP0})
-             if self.data.has_key('rho_aP0'):
+             if 'rho_aP0' in self.data:
                   h_aP0 = self.data.get('h_FaP0')+self.data.get('rho_aP0')*      \
                           (1.0-cos(radians(self.data.get('alpha_P0'))))
                   # addendum value and consistency check
-                  if self.data.has_key('h_aP0'):
+                  if 'h_aP0' in self.data:
                        if not self.data.get('h_aP0')==h_aP0:
                             raise(ValueError, 'tip definition inconsistent')
                   else:
                        self.data.update({'h_aP0':h_aP0})
 
         # calculate tip parameters with form addendum if supplied (for tool with protuberance)
-        if self._tip_type=='protuberance' and self.data.has_key('h_FaP0'):
-             if self.data.has_key('h_prP0'):
+        if self._tip_type=='protuberance' and 'h_FaP0' in self.data:
+             if 'h_prP0' in self.data:
                   h_aP0 = (self.data.get('h_prP0')+self.data.get('h_FaP0'))
                   # addendum value and consistency check
-                  if self.data.has_key('h_aP0'):
+                  if 'h_aP0' in self.data:
                        if not self.data.get('h_aP0')==h_aP0:
                             raise(ValueError, 'tip definition inconsistent')
                   else:
                        self.data.update({'h_aP0':h_aP0})
-             if self.data.has_key('h_prP0') and self.data.has_key('alpha_prP0') and self.data.has_key('rho_aP0'):
+             if 'h_prP0' in self.data and 'alpha_prP0' in self.data and 'rho_aP0' in self.data:
                   pr_P0 = (self.data.get('h_prP0')-self.data.get('rho_aP0')*                    \
                           (1.0-cos(radians(self.data.get('alpha_prP0')))))*                     \
                           tan(radians(self.data.get('alpha_P0')-self.data.get('alpha_prP0')))/  \
                           cos(radians(self.data.get('alpha_prP0')))
                   # protuberance value and consistency check
-                  if self.data.has_key('pr_P0'):
+                  if 'pr_P0' in self.data:
                        if not self.data.get('pr_P0')==pr_P0:
                             raise(ValueError, 'protuberance definition inconsistent')
                   else:
                        self.data.update({'pr_P0':pr_P0})     # this case cannot occur
-             if self.data.has_key('h_prP0') and self.data.has_key('alpha_prP0') and self.data.has_key('pr_P0'):
+             if 'h_prP0' in self.data and 'alpha_prP0' in self.data and 'pr_P0' in self.data:
                   rho_aP0 = 1/(1.0-cos(radians(self.data.get('alpha_prP0'))))*                    \
                             (self.data.get('h_prP0')-self.data.get('pr_P0')*                      \
                             cos(radians(self.data.get('alpha_prP0')))/                            \
                             tan(radians(self.data.get('alpha_P0')-self.data.get('alpha_prP0'))))  \
                   # crest rounding radius value and consistency check
-                  if self.data.has_key('rho_aP0'):
+                  if 'rho_aP0' in self.data:
                        if not self.data.get('rho_aP0')==rho_aP0:
                             raise(ValueError, 'tip definition inconsistent')
                   else:
@@ -2218,35 +2218,35 @@ class ToothedRackTool(Tool):
              # cannot be solved for alpha_prP0 explicitly (recursive solution necessary)
 
         # calculate root parameters with form dedendum if supplied (for tool without chamfered flank)
-        if self._root_type=='circular' and self.data.has_key('h_FfP0'):
-             if self.data.has_key('h_fP0'):
+        if self._root_type=='circular' and 'h_FfP0' in self.data:
+             if 'h_fP0' in self.data:
                   rho_fP0 = (self.data.get('h_fP0')-self.data.get('h_FfP0'))/    \
                             (1.0-cos(radians(self.data.get('alpha_P0'))))
                   # tooth root radius value and consistency check
-                  if self.data.has_key('rho_fP0'):
+                  if 'rho_fP0' in self.data:
                        if not self.data.get('rho_fP0')==rho_fP0:
                             raise(ValueError, 'root definition inconsistent')
                   else:
                        self.data.update({'rho_fP0':rho_fP0})
-             if self.data.has_key('rho_fP0'):
+             if 'rho_fP0' in self.data:
                   h_fP0 = self.data.get('h_FfP0')+self.data.get('rho_fP0')*      \
                           (1.0-cos(radians(self.data.get('alpha_P0'))))
                   # dedendum value and consistency check
-                  if self.data.has_key('h_fP0'):
+                  if 'h_fP0' in self.data:
                        if not self.data.get('h_fP0')==h_fP0:
                             raise(ValueError, 'root definition inconsistent')
                   else:
                        self.data.update({'h_fP0':h_fP0})
 
         # check and set tooth depth, addendum and dedendum
-        if not self.data.has_key('h_P0'):
+        if 'h_P0' not in self.data:
 
             # set addendum to default if not supplied
-            if not self.data.has_key('h_aP0'):
+            if 'h_aP0' not in self.data:
                  self.data.update({'h_aP0':self._h_aP0_default*self.data.get('m')})
 
             # set dedendum to default if not supplied
-            if not self.data.has_key('h_fP0'):
+            if 'h_fP0' not in self.data:
                  self.data.update({'h_fP0':self._h_fP0_default*self.data.get('m')})
 
             # calculate tooth depth
@@ -2254,16 +2254,16 @@ class ToothedRackTool(Tool):
 
         else:
             # set addendum to default and calculate dedendum if neither addendum nor dedendum is supplied
-            if not self.data.has_key('h_aP0') and not self.data.has_key('h_fP0'):
+            if 'h_aP0' not in self.data and 'h_fP0' not in self.data:
                  self.data.update({'h_aP0':self._h_aP0_default*self.data.get('m')})
                  self.data.update({'h_fP0':self.data.get('h_P0')-self.data.get('h_aP0')})
 
             # calculate addendum if only dedendum supplied
-            if self.data.has_key('h_fP0') and not self.data.has_key('h_aP0'):
+            if 'h_fP0' in self.data and 'h_aP0' not in self.data:
                  self.data.update({'h_aP0':self.data.get('h_P0')-self.data.get('h_fP0')})
 
             # calculate dedendum if only addedendum supplied
-            if self.data.has_key('h_aP0') and not self.data.has_key('h_fP0'):
+            if 'h_aP0' in self.data and 'h_fP0' not in self.data:
                  self.data.update({'h_fP0':self.data.get('h_P0')-self.data.get('h_aP0')})
 
         # tooth depth value check
@@ -2280,45 +2280,45 @@ class ToothedRackTool(Tool):
              raise(ValueError, 'sum of addendum and dedendum does not equal tooth depth')
 
         # set crest rounding radius to default if not supplied
-        if not self.data.has_key('rho_aP0'):
+        if 'rho_aP0' not in self.data:
              self.data.update({'rho_aP0':self._rho_aP0_default*self.data.get('m')})
         # crest rounding radius value check
         if self.data.get('rho_aP0')<0:
              raise(ValueError, 'negative crest rounding radius')
 
         # tooth root radius and chamfered flank pressure angle are exclusive
-        if self.data.has_key('rho_fP0') and self.data.has_key('alpha_KP0'):
+        if 'rho_fP0' in self.data and 'alpha_KP0' in self.data:
              raise(AttributeError, 'root type can either be circular or chamfered')
 
         # set tooth root radius to default if not supplied and no chamfered flank pressure angle is defined
-        if not self.data.has_key('rho_fP0') and not self.data.has_key('alpha_KP0'):
+        if 'rho_fP0' not in self.data and 'alpha_KP0' not in self.data:
              self.data.update({'rho_fP0':self._rho_fP0_default*self.data.get('m')})
         # tooth root radius value check
-        if self.data.has_key('rho_fP0') and self.data.get('rho_fP0')<0:
+        if 'rho_fP0' in self.data and self.data.get('rho_fP0')<0:
              raise(ValueError, 'negative tooth root radius')
 
         # check if chamfered flank definition is sufficient (pressure angle + form dedendum)
-        if self.data.has_key('alpha_KP0'):
-             if not self.data.has_key('h_FfP0'):
+        if 'alpha_KP0' in self.data:
+             if 'h_FfP0' not in self.data:
                   raise(AttributeError, 'chamfered flank definition not complete')
              elif self.data.get('h_FfP0')<=0:
                   raise(ValueError, 'non-positive form dedendum')
 
         # protuberance value check
-        if self.data.has_key('pr_P0'):
+        if 'pr_P0' in self.data:
              if self.data.get('pr_P0')<0:
                   raise(ValueError, 'negative protuberance')
              else:
                   # set protuberance flank pressure angle to default if not supplied
-                  if not self.data.has_key('alpha_prP0'):
+                  if 'alpha_prP0' not in self.data:
                        self.data.update({'alpha_prP0':self._alpha_prP0_default})
 
         # protuberance flank pressure angle value check
-        if self.data.has_key('alpha_prP0') and self.data.get('alpha_prP0')<0:
+        if 'alpha_prP0' in self.data and self.data.get('alpha_prP0')<0:
              raise(ValueError, 'negative protuberance flank pressure angle')
 
         # calculate tooth thickness if not supplied
-        if not self.data.has_key('s_P0'):
+        if 's_P0' not in self.data:
              self.data.update({'s_P0':pi*self.data.get('m')/2})
         # tooth thickness value check
         if self.data.get('s_P0')<=0:
@@ -2813,28 +2813,28 @@ class GearHobber(Machine):
              self.setBlank(blank)
 
         # check if number of teeth or pitch diameter is supplied
-        if not self.data.has_key('z') and not self.data.has_key('d'):
+        if 'z' not in self.data and 'd' not in self.data:
              raise(AttributeError, 'either number of teeth or pitch diameter must be supplied')
 
         # number of teeth: value check
-        if self.data.has_key('z') and not type(self.data.get('z'))==type(1):
+        if 'z' in self.data and not type(self.data.get('z'))==type(1):
              raise(TypeError, 'number of teeth not integer')
 
         # calculate pitch diameter if not supplied
-        if not self.data.has_key('d'):
+        if 'd' not in self.data:
              self.data.update({'d':self.tool.data.get('m')*self.data.get('z')/    \
                                cos(radians(self.data.get('beta')))})
 
         # helix angle: set to default if not supplied
-        if not self.data.has_key('beta'):
+        if 'beta' not in self.data:
              self.data.update({'beta':self._beta_default})
 
         # addendum modification factor: set to default if not supplied
-        if not self.data.has_key('x'):
+        if'x' not in self.data:
              self.data.update({'x':self._x_default})
 
         # tooth thickness allowance: set to default if not supplied
-        if not self.data.has_key('A_s'):
+        if 'A_s' not in self.data:
              self.data.update({'A_s':self._A_s_default})
         # tooth thickness allowance: value check
         else:
@@ -2842,11 +2842,11 @@ class GearHobber(Machine):
                   raise(ValueError, 'tooth thickness allowance positive')
 
         # machining allowance: set to default if not supplied
-        if not self.data.has_key('q'):
+        if 'q' not in self.data:
              self.data.update({'q':self._q_default})
 
         # calculate generating addendum modification coefficient:
-        if not self.data.has_key('x_E'):
+        if 'x_E' not in self.data:
             self.data.update({'x_E':self.data.get('x')+(self.data.get('A_s')/2/tan(radians(self.tool.data.get('alpha_P0')))+   \
                               self.data.get('q')/sin(radians(self.tool.data.get('alpha_P0'))))/self.tool.data.get('m')})
 

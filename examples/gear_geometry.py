@@ -20,11 +20,11 @@ print(mygear)  # print gear data
 mygear_solid = mygear.makeOCCSolid()  # create OCC-3d-solid of gear wheel
 
 # write 3d-solid of gear to STEP-file (in working directory)
-pygear.core.writeOCCShape(mygear_solid, 'extgear_1.stp', 'step')
+# write_occ_shape(mygear_solid, 'extgear_1.stp', 'step')
 
 # write 3d-solid of gear to IGES-file (in working directory), IGES interface has bug!
-pygear.core.writeOCCShape(mygear_solid, 'extgear_1.igs', 'iges')
+# write_occ_shape(mygear_solid, 'extgear_1.igs', 'iges')
 
 # write 3d-solid of gear to VRML-file (in working directory)
-pygear.core.writeOCCShape(mygear_solid, 'extgear_1.wrl', 'vrml')
-pygear.core.displayOCCShape(mygear_solid)
+# write_occ_shape(mygear_solid, 'extgear_1.wrl', 'vrml')
+pygear.core.display_occ_shape(mygear_solid)
