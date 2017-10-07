@@ -1,7 +1,6 @@
 # coding: utf-8
 
 """Example data for pyGear"""
-
 # EXAMPLE GEARS
 # external gears
 extgear_1 = {'m_n': 5.0, 'z': 20, 'beta': 30.0, 'alpha_n': 20.0, 'x': 0.5, 'b': 50.0, 'z_2': 63, 'a': 245.0, 'h_k': 0.5,
