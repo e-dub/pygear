@@ -61,7 +61,7 @@ print(J_2[1])
 print(J_2[2])
 
 # convert tooth form coordinates to NumPy-array (for plotting)
-np_formcoords = pygear.core.pythonocc_array_to_numpy_array(mygear_1.formcoords)
+np_formcoords = pygear.core.PythonOCCArrayToNumPyArray(mygear_1.formcoords)
 
 # plot tooth form coordinates
 plt.plot(np_formcoords[:, 0], np_formcoords[:, 1], 'x-')
@@ -70,4 +70,4 @@ plt.plot(np_formcoords[:, 0], np_formcoords[:, 1], 'x-')
 plt.show()
 
 # display solid
-pygear.core.display_occ_shape([mygear_1_solid])
+pygear.core.displayOCCShape([mygear_1_solid])
